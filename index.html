@@ -3,502 +3,565 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>てくてく錬金オープンワールドRPG</title>
+  <title>遺跡探索クラシックRPG</title>
   <style>
     :root {
-      --bg:#0f172a;
-      --panel:#111827;
-      --line:#334155;
-      --txt:#e5e7eb;
-      --sub:#94a3b8;
-      --ok:#4ade80;
-      --warn:#fbbf24;
-      --accent:#60a5fa;
+      --bg:#020617;
+      --panel:#000;
+      --line:#d1d5db;
+      --text:#f8fafc;
+      --hp:#22c55e;
+      --mp:#38bdf8;
+      --warn:#f59e0b;
     }
-    * { box-sizing:border-box; }
-    body {
+    *{box-sizing:border-box}
+    body{
       margin:0;
-      background: radial-gradient(circle at 20% 20%, #1e293b 0%, var(--bg) 50%);
-      color:var(--txt);
-      font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:#111827;
+      color:var(--text);
+      font-family:"MS Gothic","Yu Gothic",monospace;
     }
-    .wrap {
-      max-width:1120px;
+    .screen{
+      max-width:1200px;
       margin:0 auto;
-      padding:14px;
+      padding:8px;
       display:grid;
-      grid-template-columns: 1.2fr .9fr;
-      gap:12px;
-    }
-    .panel {
-      background:linear-gradient(170deg,rgba(31,41,55,.96),rgba(17,24,39,.97));
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,.35);
-    }
-    h1,h2,h3 { margin:0 0 8px; }
-    h1 { font-size:1.2rem; }
-    h2 { font-size:1rem; color:#c7d2fe; }
-    .stats {
-      display:grid;
-      grid-template-columns: repeat(5,1fr);
+      grid-template-rows:auto auto;
       gap:8px;
-      margin-bottom:10px;
+      min-height:100vh;
     }
-    .stat {
-      background:#0b1220;
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:6px;
-      text-align:center;
-    }
-    .stat small { color:var(--sub); display:block; }
-    .bar {
-      margin-top:8px;
-      height:10px;
-      border-radius:99px;
-      overflow:hidden;
-      border:1px solid var(--line);
-      background:#0b1220;
-    }
-    .bar > div { height:100%; background:linear-gradient(90deg,#22c55e,#16a34a); width:100%; }
-
-    .game-shell {
-      border:1px solid var(--line);
+    .frame{
+      border:4px solid #e5e7eb;
       border-radius:12px;
+      background:var(--panel);
+      box-shadow:inset 0 0 0 2px #111827;
       overflow:hidden;
-      background:#0b1220;
     }
-    canvas {
-      display:block;
-      width:100%;
-      image-rendering: pixelated;
-      touch-action:none;
-      background:#020617;
-    }
-    .help {
-      display:flex;
-      justify-content:space-between;
+    .top{
+      display:grid;
+      grid-template-columns:2fr 1fr;
       gap:8px;
-      color:var(--sub);
-      font-size:.85rem;
-      margin-top:8px;
-      flex-wrap:wrap;
+      min-height:52vh;
+    }
+    .map-wrap{ position:relative; background:#000; }
+    #mapCanvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
+    .area-label{
+      position:absolute;
+      top:10px; left:10px;
+      border:3px solid var(--line);
+      border-radius:10px;
+      background:rgba(0,0,0,.9);
+      padding:8px 12px;
+      font-size:1.2rem;
+      letter-spacing:1px;
     }
 
-    .controls {
-      margin-top:10px;
+    .status{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
+      grid-template-rows:auto 1fr auto;
+      background:#030712;
     }
-    .dpad {
+    .status h2{
+      margin:0;
+      padding:10px;
+      border-bottom:3px solid var(--line);
+      font-size:1.1rem;
+    }
+    .party-list{ padding:8px; display:grid; gap:8px; overflow:auto; }
+    .member{ border:2px solid var(--line); border-radius:8px; padding:6px; background:#000; }
+    .member-top{ display:flex; justify-content:space-between; align-items:center; }
+    .bars{ margin-top:4px; display:grid; gap:4px; }
+    .bar{ height:10px; border:1px solid #64748b; background:#0f172a; }
+    .bar > div{ height:100%; }
+    .hp{ background:var(--hp); }
+    .mp{ background:var(--mp); }
+    .gold{ border-top:3px solid var(--line); padding:10px; font-size:1.4rem; text-align:center; }
+
+    .bottom{
       display:grid;
-      grid-template-columns: repeat(3,56px);
-      grid-template-rows: repeat(3,50px);
-      gap:6px;
+      grid-template-columns:2fr 1fr;
+      gap:8px;
+      min-height:42vh;
+    }
+    .battle-col{ display:grid; grid-template-rows:1fr auto auto; gap:8px; }
+    .battle-stage{
+      position:relative;
+      background:radial-gradient(circle at 50% 10%, #374151 0%, #111827 55%, #000 100%);
+      display:flex;
+      align-items:flex-end;
       justify-content:center;
-      align-items:center;
+      gap:40px;
+      padding:24px;
     }
-    button {
-      border:1px solid var(--line);
-      background:#0b1220;
-      color:var(--txt);
-      border-radius:10px;
-      font-weight:700;
-      padding:8px;
+    .enemy{
+      font-size:64px;
+      filter: drop-shadow(0 6px 0 rgba(0,0,0,.5));
+      transition:transform .15s;
     }
-    button:active { transform: translateY(1px); }
-    .big-actions { display:grid; gap:8px; }
-    .big-actions button.primary { background:linear-gradient(120deg,#0ea5e9,#4f46e5); }
+    .enemy.hit{ transform:translateY(-6px) scale(1.08); }
+    .message{ padding:10px; font-size:1.15rem; line-height:1.55; min-height:82px; white-space:pre-line; }
 
-    .list {
-      display:grid;
-      gap:8px;
-      max-height:220px;
-      overflow:auto;
-    }
-    .card {
-      border:1px solid var(--line);
-      background:#0b1220;
-      border-radius:10px;
+    .cmd-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .menu{ padding:8px; display:grid; gap:6px; }
+    button{
+      border:2px solid var(--line);
+      border-radius:8px;
+      background:#000;
+      color:var(--text);
       padding:8px;
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      align-items:center;
+      font-family:inherit;
+      font-size:1.05rem;
+      text-align:left;
     }
-    .card small { color:var(--sub); }
+    button.active, button:hover{ background:#1e293b; }
 
-    .log {
-      margin-top:8px;
-      height:170px;
-      overflow:auto;
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:8px;
-      background:#020617;
-      font-size:.9rem;
-      line-height:1.4;
-    }
-    .ok { color:var(--ok); }
-    .warn { color:var(--warn); }
+    .log{ padding:8px; overflow:auto; }
+    .log h3{ margin:0 0 8px; border-bottom:2px solid var(--line); padding-bottom:4px; }
+    .log-entry{ margin:0 0 4px; }
+    .warn{ color:var(--warn); }
 
-    @media (max-width: 980px) {
-      .wrap { grid-template-columns:1fr; }
-      .stats { grid-template-columns: repeat(3,1fr); }
-      canvas { height: 360px; }
+    .mobile-pad{ display:none; grid-template-columns:repeat(3,56px); gap:6px; justify-content:center; padding:8px; }
+    .mobile-pad button{ text-align:center; }
+
+    @media (max-width: 980px){
+      .top, .bottom{ grid-template-columns:1fr; }
+      .screen{ min-height:auto; }
+      .map-wrap{ min-height:340px; }
+      .battle-stage{ min-height:190px; }
+      .mobile-pad{ display:grid; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="panel">
-      <h1>🗺️ てくてく錬金オープンワールドRPG</h1>
-      <div class="stats">
-        <div class="stat"><small>Lv</small><b id="lv"></b></div>
-        <div class="stat"><small>EXP</small><b id="exp"></b></div>
-        <div class="stat"><small>HP</small><b id="hp"></b></div>
-        <div class="stat"><small>Gold</small><b id="gold"></b></div>
-        <div class="stat"><small>座標</small><b id="pos"></b></div>
-      </div>
-      <div class="bar"><div id="hpFill"></div></div>
-
-      <div class="game-shell" style="margin-top:10px;">
-        <canvas id="game" width="640" height="420"></canvas>
-      </div>
-      <div class="help">
-        <span>移動: キーボード ↑↓←→ / WASD</span>
-        <span>採取: Enter または 採取ボタン</span>
+  <div class="screen">
+    <section class="top">
+      <div class="frame map-wrap">
+        <canvas id="mapCanvas" width="768" height="480"></canvas>
+        <div class="area-label" id="areaLabel">古びた地下遺跡 B1F</div>
       </div>
 
-      <div class="controls">
-        <div class="dpad">
-          <div></div><button data-move="up">⬆️</button><div></div>
-          <button data-move="left">⬅️</button><button data-act="harvest">⛏ 採取</button><button data-move="right">➡️</button>
-          <div></div><button data-move="down">⬇️</button><div></div>
-        </div>
-        <div class="big-actions">
-          <button class="primary" id="restBtn">🏕 休む（20G）</button>
-          <button id="sellBtn">💰 調合品を売る</button>
-        </div>
-      </div>
+      <aside class="frame status">
+        <h2>パーティステータス</h2>
+        <div id="partyList" class="party-list"></div>
+        <div class="gold" id="gold">1250 G</div>
+      </aside>
     </section>
 
-    <section class="panel">
-      <h2>🎒 インベントリ</h2>
-      <div id="inv" class="list"></div>
+    <section class="bottom">
+      <div class="battle-col">
+        <div class="frame battle-stage" id="battleStage"></div>
+        <div class="frame message" id="message"></div>
+        <div class="cmd-row">
+          <div class="frame menu" id="commandMenu"></div>
+          <div class="frame menu" id="subMenu"></div>
+        </div>
+        <div class="mobile-pad">
+          <div></div><button data-move="up">↑</button><div></div>
+          <button data-move="left">←</button><button id="actBtn">決定</button><button data-move="right">→</button>
+          <div></div><button data-move="down">↓</button><div></div>
+        </div>
+      </div>
 
-      <h2 style="margin-top:12px;">⚗️ 合成</h2>
-      <div id="recipes" class="list"></div>
-
-      <h2 style="margin-top:12px;">📜 ログ</h2>
-      <div id="log" class="log"></div>
+      <div class="frame log" id="log">
+        <h3>ログ</h3>
+      </div>
     </section>
   </div>
 
   <script>
     const TILE = 32;
-    const WORLD_W = 42;
-    const WORLD_H = 28;
-    const VIEW_W = 20;
-    const VIEW_H = 13;
+    const MAP_W = 24;
+    const MAP_H = 15;
 
-    const biomes = {
-      grass: { color:'#16a34a', item:'薬草', danger:0.06, glyph:'🌿' },
-      lake: { color:'#0ea5e9', item:'清水', danger:0.03, glyph:'💧' },
-      forest: { color:'#166534', item:'樹液', danger:0.09, glyph:'🌲' },
-      moon: { color:'#7c3aed', item:'月花', danger:0.11, glyph:'🌙' },
-      cave: { color:'#52525b', item:'鉄鉱石', danger:0.14, glyph:'⛰️' },
-      lava: { color:'#ea580c', item:'火トカゲの尻尾', danger:0.18, glyph:'🔥' },
-      town: { color:'#f59e0b', item:null, danger:0, glyph:'🏠' }
+    const tiles = { VOID:0, FLOOR:1, WALL:2, STAIRS:3, CHEST:4, WATER:5 };
+    const palette = {
+      0:'#000000',
+      1:'#475569',
+      2:'#374151',
+      3:'#d97706',
+      4:'#f59e0b',
+      5:'#1d4ed8'
     };
 
-    const state = {
-      lv:1, exp:0, expNext:20,
-      hp:100, maxHp:100,
-      gold:40,
-      x: Math.floor(WORLD_W/2), y: Math.floor(WORLD_H/2),
-      map: [],
-      items: {
-        薬草:0, 清水:0, 樹液:0, 月花:0, 鉄鉱石:0, 火トカゲの尻尾:0,
-        回復薬:0, 上級回復薬:0, 爆炎瓶:0
-      }
-    };
-
-    const recipes = [
-      { name:'回復薬', make:'回復薬', gain:1, needs:{ 薬草:2, 清水:1 }, price:30 },
-      { name:'上級回復薬', make:'上級回復薬', gain:1, needs:{ 回復薬:1, 月花:1, 樹液:1 }, price:70 },
-      { name:'爆炎瓶', make:'爆炎瓶', gain:1, needs:{ 火トカゲの尻尾:2, 鉄鉱石:1, 樹液:1 }, price:95 }
+    const party = [
+      { name:'アレス', job:'戦士', lv:16, hp:120, maxHp:120, mp:36, maxMp:36, atk:22, icon:'🛡️' },
+      { name:'リリア', job:'魔法使い', lv:16, hp:80, maxHp:80, mp:52, maxMp:52, atk:14, icon:'🔮' },
+      { name:'マックス', job:'盗賊', lv:17, hp:150, maxHp:150, mp:18, maxMp:18, atk:20, icon:'🗡️' },
+      { name:'セリナ', job:'僧侶', lv:16, hp:90, maxHp:90, mp:78, maxMp:78, atk:12, icon:'✨' }
     ];
 
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const $ = id => document.getElementById(id);
+    const state = {
+      gold:1250,
+      floor:1,
+      map:[],
+      player:{ x:2, y:2 },
+      mode:'explore',
+      encounterRate:0.11,
+      enemies:[],
+      message:'↑↓←→ で移動。宝箱と階段を探そう。',
+      selectedCommand:0
+    };
 
-    function seededNoise(x, y) {
-      const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453123;
-      return n - Math.floor(n);
+    const commandList = ['たたかう','まほう','どうぐ','にげる'];
+    const mapCanvas = document.getElementById('mapCanvas');
+    const ctx = mapCanvas.getContext('2d');
+
+    function log(text, cls='') {
+      const box = document.getElementById('log');
+      const d = document.createElement('div');
+      d.className = `log-entry ${cls}`;
+      d.textContent = `• ${text}`;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
     }
 
-    function biomeAt(x, y) {
-      if (Math.abs(x - WORLD_W/2) < 2 && Math.abs(y - WORLD_H/2) < 2) return 'town';
-      const n1 = seededNoise(x*0.8, y*0.8);
-      const n2 = seededNoise(x*1.9+17, y*1.9-3);
-      const v = (n1*0.65 + n2*0.35);
-      if (v < 0.18) return 'lake';
-      if (v < 0.42) return 'grass';
-      if (v < 0.62) return 'forest';
-      if (v < 0.78) return 'moon';
-      if (v < 0.92) return 'cave';
-      return 'lava';
+    function setMessage(text) {
+      state.message = text;
+      document.getElementById('message').textContent = text;
     }
 
-    function buildWorld() {
-      state.map = Array.from({length:WORLD_H}, (_, y) =>
-        Array.from({length:WORLD_W}, (_, x) => ({
-          biome: biomeAt(x,y),
-          hasNode: Math.random() < 0.34
-        }))
-      );
-    }
+    function generateDungeon() {
+      state.map = Array.from({length:MAP_H}, () => Array(MAP_W).fill(tiles.VOID));
+      const rooms = [];
 
-    function gainExp(v) {
-      state.exp += v;
-      while (state.exp >= state.expNext) {
-        state.exp -= state.expNext;
-        state.lv += 1;
-        state.expNext = Math.round(state.expNext * 1.35);
-        state.maxHp += 10;
-        state.hp = state.maxHp;
-        log(`レベルアップ！ Lv.${state.lv} になった`, 'ok');
-      }
-    }
+      for (let i=0;i<6;i++) {
+        const rw = 4 + Math.floor(Math.random()*4);
+        const rh = 3 + Math.floor(Math.random()*4);
+        const rx = 1 + Math.floor(Math.random()*(MAP_W-rw-2));
+        const ry = 1 + Math.floor(Math.random()*(MAP_H-rh-2));
+        rooms.push({x:rx,y:ry,w:rw,h:rh,cx:rx+Math.floor(rw/2),cy:ry+Math.floor(rh/2)});
 
-    function tileInfo(x, y) {
-      if (x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H) return null;
-      return state.map[y][x];
-    }
-
-    function move(dx, dy) {
-      const nx = state.x + dx;
-      const ny = state.y + dy;
-      const t = tileInfo(nx, ny);
-      if (!t) return;
-      state.x = nx;
-      state.y = ny;
-
-      const b = biomes[t.biome];
-      if (Math.random() < b.danger) {
-        const dmg = Math.max(2, Math.round((6 + state.lv) * (0.5 + Math.random())));
-        state.hp -= dmg;
-        log(`移動中に敵と遭遇！ ${dmg} ダメージ`, 'warn');
-        if (state.hp <= 0) {
-          state.hp = 1;
-          const lost = Math.min(state.gold, 18);
-          state.gold -= lost;
-          state.x = Math.floor(WORLD_W/2);
-          state.y = Math.floor(WORLD_H/2);
-          log(`力尽きた…街へ戻された。${lost}G 失った`, 'warn');
+        for (let y=ry;y<ry+rh;y++) {
+          for (let x=rx;x<rx+rw;x++) state.map[y][x]=tiles.FLOOR;
         }
       }
-      if (Math.random() < 0.08 && t.biome !== 'town') t.hasNode = true;
-      render();
-    }
 
-    function harvest() {
-      const t = tileInfo(state.x, state.y);
-      if (!t || t.biome === 'town') {
-        log('街では採取できない。外へ出よう。');
-        return;
+      for (let i=1;i<rooms.length;i++) {
+        const a = rooms[i-1], b = rooms[i];
+        for (let x=Math.min(a.cx,b.cx); x<=Math.max(a.cx,b.cx); x++) state.map[a.cy][x]=tiles.FLOOR;
+        for (let y=Math.min(a.cy,b.cy); y<=Math.max(a.cy,b.cy); y++) state.map[y][b.cx]=tiles.FLOOR;
       }
-      if (!t.hasNode) {
-        log('この場所は採取済み。少し移動して探そう。', 'warn');
-        return;
-      }
-      const item = biomes[t.biome].item;
-      const n = Math.random() < 0.25 ? 2 : 1;
-      state.items[item] += n;
-      t.hasNode = false;
-      gainExp(3 + Math.floor(state.lv / 3));
-      log(`${item} を ${n} 個入手！`, 'ok');
-      render();
-    }
 
-    function canCraft(needs) {
-      return Object.entries(needs).every(([k,v]) => (state.items[k] || 0) >= v);
-    }
-
-    function craft(recipe) {
-      if (!canCraft(recipe.needs)) {
-        log(`${recipe.name} の素材が足りない`, 'warn');
-        return;
-      }
-      Object.entries(recipe.needs).forEach(([k,v]) => state.items[k] -= v);
-      state.items[recipe.make] += recipe.gain;
-      gainExp(5);
-      log(`${recipe.name} を作成した！`, 'ok');
-      renderUI();
-    }
-
-    function rest() {
-      if (state.gold < 20) return log('お金が足りない（20G必要）', 'warn');
-      state.gold -= 20;
-      state.hp = state.maxHp;
-      log('宿で休んでHP全快');
-      renderUI();
-    }
-
-    function sell() {
-      let g = 0;
-      recipes.forEach(r => {
-        const n = state.items[r.make];
-        if (n > 0) {
-          g += n * r.price;
-          state.items[r.make] = 0;
-        }
-      });
-      if (g === 0) return log('売れる調合品がない', 'warn');
-      state.gold += g;
-      gainExp(Math.round(g/18));
-      log(`調合品を売って ${g}G 獲得`, 'ok');
-      renderUI();
-    }
-
-    function renderWorld() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const camX = Math.min(WORLD_W - VIEW_W, Math.max(0, state.x - Math.floor(VIEW_W/2)));
-      const camY = Math.min(WORLD_H - VIEW_H, Math.max(0, state.y - Math.floor(VIEW_H/2)));
-
-      for (let vy = 0; vy < VIEW_H; vy++) {
-        for (let vx = 0; vx < VIEW_W; vx++) {
-          const wx = camX + vx;
-          const wy = camY + vy;
-          const t = state.map[wy][wx];
-          const b = biomes[t.biome];
-          const px = vx * TILE;
-          const py = vy * TILE;
-
-          ctx.fillStyle = b.color;
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.strokeStyle = 'rgba(15,23,42,.35)';
-          ctx.strokeRect(px, py, TILE, TILE);
-
-          if (t.hasNode && b.item) {
-            ctx.fillStyle = 'rgba(255,255,255,.2)';
-            ctx.beginPath();
-            ctx.arc(px+24, py+8, 5, 0, Math.PI * 2);
-            ctx.fill();
+      for (let y=1;y<MAP_H-1;y++) {
+        for (let x=1;x<MAP_W-1;x++) {
+          if (state.map[y][x]!==tiles.VOID) {
+            for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
+              if (state.map[y+dy][x+dx]===tiles.VOID) state.map[y+dy][x+dx]=tiles.WALL;
+            }
           }
         }
       }
 
-      const px = (state.x - camX) * TILE;
-      const py = (state.y - camY) * TILE;
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.arc(px + TILE/2, py + TILE/2, 11, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(px+11, py+14, 3, 3);
-      ctx.fillRect(px+18, py+14, 3, 3);
-      ctx.fillRect(px+13, py+20, 8, 2);
+      rooms.slice(0,3).forEach(r => { state.map[r.cy][r.cx] = tiles.CHEST; });
+      const last = rooms[rooms.length-1];
+      state.map[last.cy][last.cx] = tiles.STAIRS;
+      state.player.x = rooms[0].cx;
+      state.player.y = rooms[0].cy;
 
-      const here = state.map[state.y][state.x].biome;
-      ctx.fillStyle = 'rgba(2,6,23,.75)';
-      ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '14px sans-serif';
-      ctx.fillText(`現在地: ${biomes[here].glyph} ${here} (${state.x},${state.y})`, 8, canvas.height - 7);
+      const waterRoom = rooms[1] || rooms[0];
+      for (let y=waterRoom.y+1; y<waterRoom.y+waterRoom.h-1; y++) {
+        for (let x=waterRoom.x+1; x<waterRoom.x+waterRoom.w-1; x++) {
+          if (Math.random() < 0.4 && state.map[y][x] === tiles.FLOOR) state.map[y][x] = tiles.WATER;
+        }
+      }
     }
 
-    function renderInventory() {
-      const inv = $('inv');
-      inv.innerHTML = '';
-      const entries = Object.entries(state.items).filter(([,v]) => v > 0);
-      if (!entries.length) {
-        inv.innerHTML = '<div class="card"><small>まだ何も持っていません。歩いて採取しよう！</small></div>';
+    function drawMap() {
+      const w = mapCanvas.width / MAP_W;
+      const h = mapCanvas.height / MAP_H;
+      ctx.clearRect(0,0,mapCanvas.width,mapCanvas.height);
+
+      for (let y=0;y<MAP_H;y++) {
+        for (let x=0;x<MAP_W;x++) {
+          const t = state.map[y][x];
+          ctx.fillStyle = palette[t] || '#000';
+          ctx.fillRect(x*w,y*h,w,h);
+          if (t===tiles.WALL) {
+            ctx.fillStyle='rgba(0,0,0,.35)';
+            ctx.fillRect(x*w,y*h,w,5);
+          }
+          if (t===tiles.WATER) {
+            ctx.fillStyle='rgba(255,255,255,.15)';
+            ctx.fillRect(x*w,y*h,w,2);
+          }
+          if (t===tiles.CHEST) {
+            ctx.fillStyle='#fbbf24';
+            ctx.fillRect(x*w+8,y*h+8,w-16,h-16);
+          }
+        }
+      }
+
+      const px = state.player.x*w;
+      const py = state.player.y*h;
+      ctx.fillStyle='#93c5fd';
+      ctx.fillRect(px+8,py+6,w-16,h-12);
+      ctx.fillStyle='#1e3a8a';
+      ctx.fillRect(px+11,py+h-12,w-22,8);
+    }
+
+    function renderParty() {
+      const root = document.getElementById('partyList');
+      root.innerHTML = '';
+      party.forEach(m => {
+        const node = document.createElement('div');
+        node.className = 'member';
+        node.innerHTML = `
+          <div class="member-top"><b>${m.icon} ${m.name}</b><span>${m.job} Lv${m.lv}</span></div>
+          <div class="bars">
+            <div>HP ${m.hp}/${m.maxHp}<div class="bar"><div class="hp" style="width:${(m.hp/m.maxHp)*100}%"></div></div></div>
+            <div>MP ${m.mp}/${m.maxMp}<div class="bar"><div class="mp" style="width:${(m.mp/m.maxMp)*100}%"></div></div></div>
+          </div>`;
+        root.appendChild(node);
+      });
+      document.getElementById('gold').textContent = `${state.gold} G`;
+      document.getElementById('areaLabel').textContent = `古びた地下遺跡 B${state.floor}F`;
+    }
+
+    function renderMenus() {
+      const menu = document.getElementById('commandMenu');
+      menu.innerHTML = '';
+      commandList.forEach((name, idx) => {
+        const b = document.createElement('button');
+        b.textContent = `▶ ${name}`;
+        if (state.selectedCommand === idx) b.classList.add('active');
+        b.onclick = () => runCommand(idx);
+        menu.appendChild(b);
+      });
+
+      const sub = document.getElementById('subMenu');
+      if (state.mode === 'explore') {
+        sub.innerHTML = `
+          <button id="hintBtn">しらべる</button>
+          <button id="descBtn">このゲームについて</button>
+          <button id="healBtn">全体回復(10G)</button>`;
+        document.getElementById('hintBtn').onclick = inspectTile;
+        document.getElementById('descBtn').onclick = () => setMessage('クラシックRPG風UIデモ。探索→遭遇→コマンド戦闘の流れです。');
+        document.getElementById('healBtn').onclick = healParty;
+      } else {
+        sub.innerHTML = '<button onclick="window.advanceTurn()">ターン進行</button><button onclick="window.escapeBattle()">にげる</button>';
+      }
+    }
+
+    function healParty() {
+      if (state.gold < 10) return setMessage('お金が足りない。');
+      state.gold -= 10;
+      party.forEach(m => { m.hp = Math.min(m.maxHp, m.hp+25); m.mp = Math.min(m.maxMp, m.mp+12); });
+      setMessage('薬草を使って回復した。');
+      renderParty();
+      log('パーティを回復した。');
+    }
+
+    function inspectTile() {
+      const t = state.map[state.player.y][state.player.x];
+      if (t === tiles.CHEST) setMessage('宝箱がある。決定キー(Enter)で開ける。');
+      else if (t === tiles.STAIRS) setMessage('下り階段だ。決定キーで次のフロアへ。');
+      else if (t === tiles.WATER) setMessage('水場だ。足元が滑りやすい。');
+      else setMessage('石造りの通路が続いている。');
+    }
+
+    function canWalk(x,y){
+      if (x<0||y<0||x>=MAP_W||y>=MAP_H) return false;
+      const t = state.map[y][x];
+      return t !== tiles.VOID && t !== tiles.WALL;
+    }
+
+    function move(dx,dy){
+      if (state.mode !== 'explore') return;
+      const nx = state.player.x + dx;
+      const ny = state.player.y + dy;
+      if (!canWalk(nx,ny)) return;
+      state.player.x = nx; state.player.y = ny;
+      drawMap();
+
+      if (Math.random() < state.encounterRate) startBattle();
+    }
+
+    function interact(){
+      if (state.mode === 'battle') {
+        runCommand(0);
         return;
       }
-      entries.forEach(([k,v]) => {
+      const t = state.map[state.player.y][state.player.x];
+      if (t === tiles.CHEST) {
+        const g = 30 + Math.floor(Math.random()*90);
+        state.gold += g;
+        state.map[state.player.y][state.player.x] = tiles.FLOOR;
+        setMessage(`宝箱を開けた！ ${g}G を手に入れた。`);
+        log(`${g}G を入手。`);
+        renderParty(); drawMap();
+      } else if (t === tiles.STAIRS) {
+        state.floor += 1;
+        state.encounterRate = Math.min(0.2, state.encounterRate + 0.01);
+        generateDungeon();
+        setMessage(`B${state.floor}F に降りた…`);
+        log(`フロア移動: B${state.floor}F`);
+        renderAll();
+      } else {
+        inspectTile();
+      }
+    }
+
+    function randomEnemy(){
+      const table = [
+        {name:'スライムA', hp:35, atk:8, icon:'💧'},
+        {name:'ゴブリン', hp:55, atk:11, icon:'👹'},
+        {name:'スケルトン', hp:50, atk:12, icon:'💀'},
+        {name:'コウモリ', hp:28, atk:9, icon:'🦇'}
+      ];
+      return {...table[Math.floor(Math.random()*table.length)]};
+    }
+
+    function startBattle(){
+      state.mode = 'battle';
+      state.enemies = [randomEnemy(), randomEnemy()].filter((_,i)=> i===0 || Math.random()>0.35);
+      setMessage(state.enemies.map(e => `${e.name} が あらわれた！`).join('\n'));
+      renderBattle();
+      renderMenus();
+      log('敵と遭遇した！', 'warn');
+    }
+
+    function renderBattle(){
+      const stage = document.getElementById('battleStage');
+      stage.innerHTML = '';
+      if (state.mode !== 'battle') {
+        stage.innerHTML = '<div style="font-size:1.4rem;opacity:.85;">探索中…（敵に遭遇するとここに表示）</div>';
+        return;
+      }
+      state.enemies.forEach(e => {
         const d = document.createElement('div');
-        d.className = 'card';
-        d.innerHTML = `<div><b>${k}</b><br><small>所持: ${v}</small></div>`;
-        inv.appendChild(d);
+        d.className = 'enemy';
+        d.textContent = e.icon;
+        d.title = `${e.name} HP:${e.hp}`;
+        stage.appendChild(d);
       });
     }
 
-    function renderRecipes() {
-      const root = $('recipes');
-      root.innerHTML = '';
-      recipes.forEach(r => {
-        const need = Object.entries(r.needs).map(([k,v]) => `${k}×${v}`).join(' / ');
-        const ok = canCraft(r.needs);
-        const d = document.createElement('div');
-        d.className = 'card';
-        d.innerHTML = `<div><b>${r.name}</b><br><small>${need}<br>売値 ${r.price}G</small></div>`;
-        const b = document.createElement('button');
-        b.textContent = ok ? '合成' : '不足';
-        b.disabled = !ok;
-        b.onclick = () => craft(r);
-        d.appendChild(b);
-        root.appendChild(d);
+    function runCommand(idx){
+      if (state.mode !== 'battle') {
+        state.selectedCommand = idx;
+        const text = ['探索中は移動して敵を探そう。','戦闘中に使える。','道具は開発中。','探索中。'][idx];
+        setMessage(text);
+        renderMenus();
+        return;
+      }
+
+      if (idx === 3) return escapeBattle();
+      if (idx === 2) return setMessage('どうぐは現在調整中…');
+      if (idx === 1) {
+        const mage = party[1];
+        if (mage.mp < 8) return setMessage('MPが足りない！');
+        mage.mp -= 8;
+        const dmg = 24 + Math.floor(Math.random()*12);
+        state.enemies.forEach(e => e.hp -= dmg);
+        setMessage(`リリアのファイア！ 全体に ${dmg} ダメージ！`);
+        animateHit();
+      } else {
+        const alive = party.filter(p => p.hp > 0);
+        const target = state.enemies[0];
+        const sumAtk = alive.reduce((a,b)=>a+b.atk,0);
+        const dmg = Math.round(sumAtk * (0.45 + Math.random()*0.3));
+        target.hp -= dmg;
+        setMessage(`総攻撃！ ${target.name} に ${dmg} ダメージ！`);
+        animateHit();
+      }
+
+      state.enemies = state.enemies.filter(e => e.hp > 0);
+      if (!state.enemies.length) return winBattle();
+      enemyTurn();
+      renderParty();
+      renderBattle();
+    }
+
+    function animateHit(){
+      document.querySelectorAll('.enemy').forEach(el => {
+        el.classList.add('hit');
+        setTimeout(() => el.classList.remove('hit'), 120);
       });
     }
 
-    function renderTop() {
-      $('lv').textContent = state.lv;
-      $('exp').textContent = `${state.exp}/${state.expNext}`;
-      $('hp').textContent = `${state.hp}/${state.maxHp}`;
-      $('gold').textContent = `${state.gold}G`;
-      $('pos').textContent = `${state.x},${state.y}`;
-      $('hpFill').style.width = `${Math.max(0,(state.hp/state.maxHp)*100)}%`;
+    function enemyTurn(){
+      const alive = party.filter(p => p.hp > 0);
+      state.enemies.forEach(e => {
+        const t = alive[Math.floor(Math.random()*alive.length)];
+        const dmg = Math.max(5, Math.round(e.atk * (0.6 + Math.random()*0.6)));
+        t.hp = Math.max(0, t.hp - dmg);
+        log(`${e.name} の攻撃！ ${t.name} に ${dmg} ダメージ`, 'warn');
+      });
+      if (party.every(p => p.hp <= 0)) {
+        party.forEach(p => p.hp = Math.round(p.maxHp*0.4));
+        state.gold = Math.max(0, state.gold - 120);
+        state.mode = 'explore';
+        setMessage('全滅した…街へ戻され、120Gを失った。');
+        log('全滅して撤退した。', 'warn');
+        renderAll();
+      }
     }
 
-    function renderUI() {
-      renderTop();
-      renderInventory();
-      renderRecipes();
+    function winBattle(){
+      const g = 40 + Math.floor(Math.random()*55) + state.floor*8;
+      state.gold += g;
+      party.forEach(p => {
+        if (p.hp > 0) {
+          p.hp = Math.min(p.maxHp, p.hp + 6);
+          p.mp = Math.min(p.maxMp, p.mp + 3);
+        }
+      });
+      state.mode = 'explore';
+      setMessage(`勝利！ ${g}G を手に入れた。`);
+      log(`戦闘勝利。${g}G 獲得。`);
+      renderAll();
     }
 
-    function render() {
-      renderUI();
-      renderWorld();
+    function escapeBattle(){
+      if (state.mode !== 'battle') return;
+      if (Math.random() < 0.65) {
+        state.mode = 'explore';
+        setMessage('うまく逃げ切った。');
+        log('戦闘から離脱した。');
+        renderAll();
+      } else {
+        setMessage('逃げられない！');
+        enemyTurn();
+        renderParty();
+      }
     }
 
-    function log(text, type='') {
-      const box = $('log');
-      const line = document.createElement('div');
-      if (type) line.className = type;
-      line.textContent = `• ${text}`;
-      box.prepend(line);
+    function renderAll(){
+      drawMap();
+      renderParty();
+      renderBattle();
+      renderMenus();
+      document.getElementById('message').textContent = state.message;
     }
+
+    window.advanceTurn = () => runCommand(0);
+    window.escapeBattle = escapeBattle;
+
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup' || k === 'w') move(0,-1);
+      else if (k === 'arrowdown' || k === 's') move(0,1);
+      else if (k === 'arrowleft' || k === 'a') move(-1,0);
+      else if (k === 'arrowright' || k === 'd') move(1,0);
+      else if (k === 'enter' || k === ' ') interact();
+      else if (k === '1') runCommand(0);
+      else if (k === '2') runCommand(1);
+      else if (k === '3') runCommand(2);
+      else if (k === '4') runCommand(3);
+    });
 
     document.querySelectorAll('[data-move]').forEach(btn => {
       const dir = btn.dataset.move;
       const map = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
-      const handler = () => move(...map[dir]);
-      btn.addEventListener('click', handler);
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); handler(); }, {passive:false});
+      const fn = () => move(...map[dir]);
+      btn.onclick = fn;
+      btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); fn(); }, {passive:false});
     });
+    document.getElementById('actBtn').onclick = interact;
 
-    document.querySelector('[data-act="harvest"]').addEventListener('click', harvest);
-    document.querySelector('[data-act="harvest"]').addEventListener('touchstart', (e) => { e.preventDefault(); harvest(); }, {passive:false});
-    $('restBtn').onclick = rest;
-    $('sellBtn').onclick = sell;
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') move(0,-1);
-      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') move(0,1);
-      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') move(-1,0);
-      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') move(1,0);
-      if (e.key === 'Enter' || e.key === ' ') harvest();
-    });
-
-    buildWorld();
-    render();
-    log('冒険開始！てくてく歩いて素材ポイントで採取しよう。');
+    generateDungeon();
+    renderAll();
+    log('遺跡探索を開始。');
   </script>
 </body>
 </html>
