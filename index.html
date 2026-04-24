@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>てくてく錬金オープンワールドRPG</title>
+  <style>
+    :root {
+      --bg:#0f172a;
+      --panel:#111827;
+      --line:#334155;
+      --txt:#e5e7eb;
+      --sub:#94a3b8;
+      --ok:#4ade80;
+      --warn:#fbbf24;
+      --accent:#60a5fa;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0;
+      background: radial-gradient(circle at 20% 20%, #1e293b 0%, var(--bg) 50%);
+      color:var(--txt);
+      font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    }
+    .wrap {
+      max-width:1120px;
+      margin:0 auto;
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1.2fr .9fr;
+      gap:12px;
+    }
+    .panel {
+      background:linear-gradient(170deg,rgba(31,41,55,.96),rgba(17,24,39,.97));
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    h1,h2,h3 { margin:0 0 8px; }
+    h1 { font-size:1.2rem; }
+    h2 { font-size:1rem; color:#c7d2fe; }
+    .stats {
+      display:grid;
+      grid-template-columns: repeat(5,1fr);
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .stat {
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:6px;
+      text-align:center;
+    }
+    .stat small { color:var(--sub); display:block; }
+    .bar {
+      margin-top:8px;
+      height:10px;
+      border-radius:99px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      background:#0b1220;
+    }
+    .bar > div { height:100%; background:linear-gradient(90deg,#22c55e,#16a34a); width:100%; }
+
+    .game-shell {
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:hidden;
+      background:#0b1220;
+    }
+    canvas {
+      display:block;
+      width:100%;
+      image-rendering: pixelated;
+      touch-action:none;
+      background:#020617;
+    }
+    .help {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      color:var(--sub);
+      font-size:.85rem;
+      margin-top:8px;
+      flex-wrap:wrap;
+    }
+
+    .controls {
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .dpad {
+      display:grid;
+      grid-template-columns: repeat(3,56px);
+      grid-template-rows: repeat(3,50px);
+      gap:6px;
+      justify-content:center;
+      align-items:center;
+    }
+    button {
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--txt);
+      border-radius:10px;
+      font-weight:700;
+      padding:8px;
+    }
+    button:active { transform: translateY(1px); }
+    .big-actions { display:grid; gap:8px; }
+    .big-actions button.primary { background:linear-gradient(120deg,#0ea5e9,#4f46e5); }
+
+    .list {
+      display:grid;
+      gap:8px;
+      max-height:220px;
+      overflow:auto;
+    }
+    .card {
+      border:1px solid var(--line);
+      background:#0b1220;
+      border-radius:10px;
+      padding:8px;
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+    }
+    .card small { color:var(--sub); }
+
+    .log {
+      margin-top:8px;
+      height:170px;
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px;
+      background:#020617;
+      font-size:.9rem;
+      line-height:1.4;
+    }
+    .ok { color:var(--ok); }
+    .warn { color:var(--warn); }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns:1fr; }
+      .stats { grid-template-columns: repeat(3,1fr); }
+      canvas { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel">
+      <h1>🗺️ てくてく錬金オープンワールドRPG</h1>
+      <div class="stats">
+        <div class="stat"><small>Lv</small><b id="lv"></b></div>
+        <div class="stat"><small>EXP</small><b id="exp"></b></div>
+        <div class="stat"><small>HP</small><b id="hp"></b></div>
+        <div class="stat"><small>Gold</small><b id="gold"></b></div>
+        <div class="stat"><small>座標</small><b id="pos"></b></div>
+      </div>
+      <div class="bar"><div id="hpFill"></div></div>
+
+      <div class="game-shell" style="margin-top:10px;">
+        <canvas id="game" width="640" height="420"></canvas>
+      </div>
+      <div class="help">
+        <span>移動: キーボード ↑↓←→ / WASD</span>
+        <span>採取: Enter または 採取ボタン</span>
+      </div>
+
+      <div class="controls">
+        <div class="dpad">
+          <div></div><button data-move="up">⬆️</button><div></div>
+          <button data-move="left">⬅️</button><button data-act="harvest">⛏ 採取</button><button data-move="right">➡️</button>
+          <div></div><button data-move="down">⬇️</button><div></div>
+        </div>
+        <div class="big-actions">
+          <button class="primary" id="restBtn">🏕 休む（20G）</button>
+          <button id="sellBtn">💰 調合品を売る</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>🎒 インベントリ</h2>
+      <div id="inv" class="list"></div>
+
+      <h2 style="margin-top:12px;">⚗️ 合成</h2>
+      <div id="recipes" class="list"></div>
+
+      <h2 style="margin-top:12px;">📜 ログ</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+
+  <script>
+    const TILE = 32;
+    const WORLD_W = 42;
+    const WORLD_H = 28;
+    const VIEW_W = 20;
+    const VIEW_H = 13;
+
+    const biomes = {
+      grass: { color:'#16a34a', item:'薬草', danger:0.06, glyph:'🌿' },
+      lake: { color:'#0ea5e9', item:'清水', danger:0.03, glyph:'💧' },
+      forest: { color:'#166534', item:'樹液', danger:0.09, glyph:'🌲' },
+      moon: { color:'#7c3aed', item:'月花', danger:0.11, glyph:'🌙' },
+      cave: { color:'#52525b', item:'鉄鉱石', danger:0.14, glyph:'⛰️' },
+      lava: { color:'#ea580c', item:'火トカゲの尻尾', danger:0.18, glyph:'🔥' },
+      town: { color:'#f59e0b', item:null, danger:0, glyph:'🏠' }
+    };
+
+    const state = {
+      lv:1, exp:0, expNext:20,
+      hp:100, maxHp:100,
+      gold:40,
+      x: Math.floor(WORLD_W/2), y: Math.floor(WORLD_H/2),
+      map: [],
+      items: {
+        薬草:0, 清水:0, 樹液:0, 月花:0, 鉄鉱石:0, 火トカゲの尻尾:0,
+        回復薬:0, 上級回復薬:0, 爆炎瓶:0
+      }
+    };
+
+    const recipes = [
+      { name:'回復薬', make:'回復薬', gain:1, needs:{ 薬草:2, 清水:1 }, price:30 },
+      { name:'上級回復薬', make:'上級回復薬', gain:1, needs:{ 回復薬:1, 月花:1, 樹液:1 }, price:70 },
+      { name:'爆炎瓶', make:'爆炎瓶', gain:1, needs:{ 火トカゲの尻尾:2, 鉄鉱石:1, 樹液:1 }, price:95 }
+    ];
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const $ = id => document.getElementById(id);
+
+    function seededNoise(x, y) {
+      const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453123;
+      return n - Math.floor(n);
+    }
+
+    function biomeAt(x, y) {
+      if (Math.abs(x - WORLD_W/2) < 2 && Math.abs(y - WORLD_H/2) < 2) return 'town';
+      const n1 = seededNoise(x*0.8, y*0.8);
+      const n2 = seededNoise(x*1.9+17, y*1.9-3);
+      const v = (n1*0.65 + n2*0.35);
+      if (v < 0.18) return 'lake';
+      if (v < 0.42) return 'grass';
+      if (v < 0.62) return 'forest';
+      if (v < 0.78) return 'moon';
+      if (v < 0.92) return 'cave';
+      return 'lava';
+    }
+
+    function buildWorld() {
+      state.map = Array.from({length:WORLD_H}, (_, y) =>
+        Array.from({length:WORLD_W}, (_, x) => ({
+          biome: biomeAt(x,y),
+          hasNode: Math.random() < 0.34
+        }))
+      );
+    }
+
+    function gainExp(v) {
+      state.exp += v;
+      while (state.exp >= state.expNext) {
+        state.exp -= state.expNext;
+        state.lv += 1;
+        state.expNext = Math.round(state.expNext * 1.35);
+        state.maxHp += 10;
+        state.hp = state.maxHp;
+        log(`レベルアップ！ Lv.${state.lv} になった`, 'ok');
+      }
+    }
+
+    function tileInfo(x, y) {
+      if (x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H) return null;
+      return state.map[y][x];
+    }
+
+    function move(dx, dy) {
+      const nx = state.x + dx;
+      const ny = state.y + dy;
+      const t = tileInfo(nx, ny);
+      if (!t) return;
+      state.x = nx;
+      state.y = ny;
+
+      const b = biomes[t.biome];
+      if (Math.random() < b.danger) {
+        const dmg = Math.max(2, Math.round((6 + state.lv) * (0.5 + Math.random())));
+        state.hp -= dmg;
+        log(`移動中に敵と遭遇！ ${dmg} ダメージ`, 'warn');
+        if (state.hp <= 0) {
+          state.hp = 1;
+          const lost = Math.min(state.gold, 18);
+          state.gold -= lost;
+          state.x = Math.floor(WORLD_W/2);
+          state.y = Math.floor(WORLD_H/2);
+          log(`力尽きた…街へ戻された。${lost}G 失った`, 'warn');
+        }
+      }
+      if (Math.random() < 0.08 && t.biome !== 'town') t.hasNode = true;
+      render();
+    }
+
+    function harvest() {
+      const t = tileInfo(state.x, state.y);
+      if (!t || t.biome === 'town') {
+        log('街では採取できない。外へ出よう。');
+        return;
+      }
+      if (!t.hasNode) {
+        log('この場所は採取済み。少し移動して探そう。', 'warn');
+        return;
+      }
+      const item = biomes[t.biome].item;
+      const n = Math.random() < 0.25 ? 2 : 1;
+      state.items[item] += n;
+      t.hasNode = false;
+      gainExp(3 + Math.floor(state.lv / 3));
+      log(`${item} を ${n} 個入手！`, 'ok');
+      render();
+    }
+
+    function canCraft(needs) {
+      return Object.entries(needs).every(([k,v]) => (state.items[k] || 0) >= v);
+    }
+
+    function craft(recipe) {
+      if (!canCraft(recipe.needs)) {
+        log(`${recipe.name} の素材が足りない`, 'warn');
+        return;
+      }
+      Object.entries(recipe.needs).forEach(([k,v]) => state.items[k] -= v);
+      state.items[recipe.make] += recipe.gain;
+      gainExp(5);
+      log(`${recipe.name} を作成した！`, 'ok');
+      renderUI();
+    }
+
+    function rest() {
+      if (state.gold < 20) return log('お金が足りない（20G必要）', 'warn');
+      state.gold -= 20;
+      state.hp = state.maxHp;
+      log('宿で休んでHP全快');
+      renderUI();
+    }
+
+    function sell() {
+      let g = 0;
+      recipes.forEach(r => {
+        const n = state.items[r.make];
+        if (n > 0) {
+          g += n * r.price;
+          state.items[r.make] = 0;
+        }
+      });
+      if (g === 0) return log('売れる調合品がない', 'warn');
+      state.gold += g;
+      gainExp(Math.round(g/18));
+      log(`調合品を売って ${g}G 獲得`, 'ok');
+      renderUI();
+    }
+
+    function renderWorld() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const camX = Math.min(WORLD_W - VIEW_W, Math.max(0, state.x - Math.floor(VIEW_W/2)));
+      const camY = Math.min(WORLD_H - VIEW_H, Math.max(0, state.y - Math.floor(VIEW_H/2)));
+
+      for (let vy = 0; vy < VIEW_H; vy++) {
+        for (let vx = 0; vx < VIEW_W; vx++) {
+          const wx = camX + vx;
+          const wy = camY + vy;
+          const t = state.map[wy][wx];
+          const b = biomes[t.biome];
+          const px = vx * TILE;
+          const py = vy * TILE;
+
+          ctx.fillStyle = b.color;
+          ctx.fillRect(px, py, TILE, TILE);
+          ctx.strokeStyle = 'rgba(15,23,42,.35)';
+          ctx.strokeRect(px, py, TILE, TILE);
+
+          if (t.hasNode && b.item) {
+            ctx.fillStyle = 'rgba(255,255,255,.2)';
+            ctx.beginPath();
+            ctx.arc(px+24, py+8, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      const px = (state.x - camX) * TILE;
+      const py = (state.y - camY) * TILE;
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(px + TILE/2, py + TILE/2, 11, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(px+11, py+14, 3, 3);
+      ctx.fillRect(px+18, py+14, 3, 3);
+      ctx.fillRect(px+13, py+20, 8, 2);
+
+      const here = state.map[state.y][state.x].biome;
+      ctx.fillStyle = 'rgba(2,6,23,.75)';
+      ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '14px sans-serif';
+      ctx.fillText(`現在地: ${biomes[here].glyph} ${here} (${state.x},${state.y})`, 8, canvas.height - 7);
+    }
+
+    function renderInventory() {
+      const inv = $('inv');
+      inv.innerHTML = '';
+      const entries = Object.entries(state.items).filter(([,v]) => v > 0);
+      if (!entries.length) {
+        inv.innerHTML = '<div class="card"><small>まだ何も持っていません。歩いて採取しよう！</small></div>';
+        return;
+      }
+      entries.forEach(([k,v]) => {
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.innerHTML = `<div><b>${k}</b><br><small>所持: ${v}</small></div>`;
+        inv.appendChild(d);
+      });
+    }
+
+    function renderRecipes() {
+      const root = $('recipes');
+      root.innerHTML = '';
+      recipes.forEach(r => {
+        const need = Object.entries(r.needs).map(([k,v]) => `${k}×${v}`).join(' / ');
+        const ok = canCraft(r.needs);
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.innerHTML = `<div><b>${r.name}</b><br><small>${need}<br>売値 ${r.price}G</small></div>`;
+        const b = document.createElement('button');
+        b.textContent = ok ? '合成' : '不足';
+        b.disabled = !ok;
+        b.onclick = () => craft(r);
+        d.appendChild(b);
+        root.appendChild(d);
+      });
+    }
+
+    function renderTop() {
+      $('lv').textContent = state.lv;
+      $('exp').textContent = `${state.exp}/${state.expNext}`;
+      $('hp').textContent = `${state.hp}/${state.maxHp}`;
+      $('gold').textContent = `${state.gold}G`;
+      $('pos').textContent = `${state.x},${state.y}`;
+      $('hpFill').style.width = `${Math.max(0,(state.hp/state.maxHp)*100)}%`;
+    }
+
+    function renderUI() {
+      renderTop();
+      renderInventory();
+      renderRecipes();
+    }
+
+    function render() {
+      renderUI();
+      renderWorld();
+    }
+
+    function log(text, type='') {
+      const box = $('log');
+      const line = document.createElement('div');
+      if (type) line.className = type;
+      line.textContent = `• ${text}`;
+      box.prepend(line);
+    }
+
+    document.querySelectorAll('[data-move]').forEach(btn => {
+      const dir = btn.dataset.move;
+      const map = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
+      const handler = () => move(...map[dir]);
+      btn.addEventListener('click', handler);
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); handler(); }, {passive:false});
+    });
+
+    document.querySelector('[data-act="harvest"]').addEventListener('click', harvest);
+    document.querySelector('[data-act="harvest"]').addEventListener('touchstart', (e) => { e.preventDefault(); harvest(); }, {passive:false});
+    $('restBtn').onclick = rest;
+    $('sellBtn').onclick = sell;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') move(0,-1);
+      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') move(0,1);
+      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') move(-1,0);
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') move(1,0);
+      if (e.key === 'Enter' || e.key === ' ') harvest();
+    });
+
+    buildWorld();
+    render();
+    log('冒険開始！てくてく歩いて素材ポイントで採取しよう。');
+  </script>
+</body>
+</html>
