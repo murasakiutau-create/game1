@@ -41,9 +41,9 @@
   日本語フォントは2種を混植しています：
   ・ひらがな：Oradano明朝GSRR（内田明氏 制作・再配布自由）
     詳細は assets/fonts/OradanoGSRR-README.txt を参照。
-  ・漢字ほか：異世明 Isemin（源ノ明朝派生・SIL OFL 1.1）
-    詳細は assets/fonts/Isemin-LICENSE_OFL.txt 及び
-    assets/fonts/Isemin-ReadMe.txt を参照。
+  ・漢字ほか：源界明朝 Genkai Mincho（源ノ明朝派生・SIL OFL 1.1）
+    詳細は assets/fonts/GenkaiMincho-LICENSE_OFL.txt 及び
+    assets/fonts/GenkaiMincho-ReadMe.txt を参照。
   CSS の unicode-range で文字種ごとに振り分けています。
 
 ■ 配布物

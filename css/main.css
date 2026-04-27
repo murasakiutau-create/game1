@@ -6,10 +6,10 @@
   font-display: swap;
 }
 
-/* Kanji + Latin + everything else: 異世明 (Source Han Serif derivative, SIL OFL 1.1). */
+/* Kanji + Latin + everything else: 源界明朝 (Source Han Serif derivative, SIL OFL 1.1). */
 @font-face {
-  font-family: "Isemin";
-  src: url("../assets/fonts/Isemin.otf") format("opentype");
+  font-family: "GenkaiMincho";
+  src: url("../assets/fonts/genkai-mincho.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -40,7 +40,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "OradanoKana", "Isemin", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
+  font-family: "OradanoKana", "GenkaiMincho", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
   font-feature-settings: "palt" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

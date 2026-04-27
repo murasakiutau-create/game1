@@ -21,7 +21,7 @@ export function renderTitleScene(host, { onStart }) {
         btn("セーブから続ける", () => openSlotsDialog(onStart), { ghost: true }),
         btn("コードから読み込む", () => importDialog(onStart), { ghost: true, small: true }),
       ),
-      h("div", { class: "credit" }, "フォント混植：Oradano明朝GSRR（仮名／内田明氏）＋ 異世明 Isemin（漢字／SIL OFL 1.1）"),
+      h("div", { class: "credit" }, "フォント混植：Oradano明朝GSRR（仮名／内田明氏）＋ 源界明朝 Genkai Mincho（漢字／SIL OFL 1.1）"),
     )
   );
   host.appendChild(root);
