@@ -237,22 +237,18 @@
 }
 
 .bottom-tabs button .icon { font-size: 1.1rem; line-height: 1; }
-.bottom-tabs button .icon.png-mask {
+.bottom-tabs button .icon.png-icon {
   display: inline-block;
   width: 1.4rem;
   height: 1.4rem;
-  background-color: currentColor;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
-.bottom-tabs button .icon.png-mask.icon-title  { -webkit-mask-image: url("../assets/icons/title.png");  mask-image: url("../assets/icons/title.png"); }
-.bottom-tabs button .icon.png-mask.icon-logs   { -webkit-mask-image: url("../assets/icons/logs.png");   mask-image: url("../assets/icons/logs.png"); }
-.bottom-tabs button .icon.png-mask.icon-party  { -webkit-mask-image: url("../assets/icons/party.png");  mask-image: url("../assets/icons/party.png"); }
-.bottom-tabs button .icon.png-mask.icon-market { -webkit-mask-image: url("../assets/icons/market.png"); mask-image: url("../assets/icons/market.png"); }
+.bottom-tabs button .icon.png-icon.icon-title  { background-image: url("../assets/icons/title.png"); }
+.bottom-tabs button .icon.png-icon.icon-logs   { background-image: url("../assets/icons/logs.png"); }
+.bottom-tabs button .icon.png-icon.icon-party  { background-image: url("../assets/icons/party.png"); }
+.bottom-tabs button .icon.png-icon.icon-market { background-image: url("../assets/icons/market.png"); }
 .bottom-tabs button[aria-current="true"] { color: var(--gold-soft); border-color: var(--gold-deep); background: rgba(184, 146, 79, 0.1); }
 
 @media (max-width: 480px) {

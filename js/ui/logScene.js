@@ -4,6 +4,7 @@ import { h, btn, modal, panel } from "./components.js";
 import { state } from "../state.js";
 import { getLogs } from "../systems/log.js";
 import { CLASSES } from "../data/adventurers.js";
+import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
 
 const KIND_LABELS = {
   dispatch: "派遣",
@@ -62,7 +63,8 @@ export function openLogViewer() {
       if (l.kind === "dispatch" && l.detail?.drops?.length) {
         const det = h("details", null,
           h("summary", { class: "muted" }, "採取の詳細"),
-          h("ul", null, ...l.detail.drops.map(d => h("li", null, `${d.matId} ${d.q} ×${d.n}`))),
+          h("ul", null, ...l.detail.drops.map(d => h("li", null,
+            `${MATERIALS[d.matId]?.name || d.matId} ${QUALITY_LABEL[d.q] || d.q} ×${d.n}`))),
         );
         card.appendChild(det);
       }

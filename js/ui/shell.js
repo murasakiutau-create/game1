@@ -42,7 +42,7 @@ export function renderShell(root, sceneEl, navHandlers) {
 
 function bottomBtn(id, iconKey, label, on) {
   return h("button", { type: "button", onClick: on, dataset: { id } },
-    h("span", { class: `icon png-mask icon-${iconKey}`, "aria-hidden": "true" }),
+    h("span", { class: `icon png-icon icon-${iconKey}`, "aria-hidden": "true" }),
     h("span", null, label));
 }
 
