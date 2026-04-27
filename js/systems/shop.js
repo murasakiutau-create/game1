@@ -94,8 +94,8 @@ export function runShopSimulation() {
       events.push({ type: "too-expensive", cust: cust.name, item: item.name, ask: pick.askPrice, ceiling: Math.floor(ceiling) });
       continue;
     }
-    // Final paid price = askPrice * priceBias clamped to ceiling
-    const paid = Math.min(pick.askPrice, Math.round(pick.askPrice * cust.priceBias));
+    // Customer either accepts the asking price or walks away — they don't haggle.
+    const paid = pick.askPrice;
     pick.count -= 1;
     if (pick.count <= 0) state.shelf = state.shelf.filter(s => s !== pick);
     earnings += paid;
