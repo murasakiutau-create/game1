@@ -353,14 +353,14 @@ input[type="number"], input[type="text"] {
 .class-portrait {
   flex: 0 0 auto;
   display: inline-block;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 2.6rem;
+  height: 2.6rem;
   border-radius: 50%;
   border: 1px solid var(--gold-deep);
   background: radial-gradient(ellipse at 50% 35%, #f0e0b6 0%, #d8be7e 70%, #b89a5e 100%);
-  background-position: center 60%;
+  background-position: center 65%;
   background-repeat: no-repeat;
-  background-size: 130%;
+  background-size: 95%;
   background-blend-mode: multiply;
   box-shadow:
     inset 0 0 0 2px rgba(255, 240, 200, 0.4),
