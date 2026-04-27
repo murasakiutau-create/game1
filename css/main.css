@@ -366,6 +366,30 @@ input[type="number"], input[type="text"] {
     inset 0 0 0 2px rgba(255, 240, 200, 0.4),
     0 1px 2px rgba(0, 0, 0, 0.3);
 }
+.card-icon {
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 1.6rem;
+  height: 1.6rem;
+  vertical-align: middle;
+  border: 1px solid var(--gold-deep);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f0e0b6 0%, #e2cc97 100%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 92%;
+  background-blend-mode: multiply;
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 200, 0.4), 0 1px 1px rgba(0, 0, 0, 0.25);
+  margin-right: 0.4em;
+}
+.card-icon.small  { width: 1.1rem; height: 1.1rem; }
+.card-icon.large  { width: 2.2rem; height: 2.2rem; }
+.card-icon.icon-item   { background-image: url("../assets/icons/cat-item.png"); }
+.card-icon.icon-weapon { background-image: url("../assets/icons/cat-weapon.png"); }
+.card-icon.icon-armor  { background-image: url("../assets/icons/cat-armor.png"); }
+.card-icon.icon-heal   { background-image: url("../assets/icons/cat-heal.png"); }
+.card-icon.icon-attack { background-image: url("../assets/icons/cat-attack.png"); background-size: 100%; }
+
 .class-portrait.class-warrior    { background-image: url("../assets/portraits/warrior.png"); }
 .class-portrait.class-knight     { background-image: url("../assets/portraits/knight.png"); }
 .class-portrait.class-mage       { background-image: url("../assets/portraits/mage.png"); }

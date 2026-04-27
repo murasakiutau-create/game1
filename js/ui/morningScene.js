@@ -15,6 +15,7 @@ import { ITEMS } from "../data/recipes.js";
 import { advSummary, rankSeal } from "./advCard.js";
 import { ELEMENTS, elementLabel } from "../data/elements.js";
 import { PASSIVES, PASSIVE_ORDER, passivesAllowedForClass, passiveSlotsForRank } from "../data/passives.js";
+import { spellIconKind, itemIconKind, iconChip } from "./iconKind.js";
 
 // Tracks which day we already auto-opened the return modal for, so it
 // only pops up once per new morning even if the scene re-renders.
@@ -263,7 +264,7 @@ function openGearPicker(adv, slot, parentRerender) {
   for (const c of candidates) {
     list.appendChild(h("div", { class: "parchment-card selectable" },
       h("div", { class: "row between" },
-        h("strong", null, c.eq.name),
+        h("strong", null, iconChip(slot === "weapon" ? "weapon" : slot === "armor" ? "armor" : "item"), c.eq.name),
         h("span", { class: "tag" }, CAT_LABELS[c.eq.cat] + " ×" + c.inv.count),
       ),
       h("div", { class: "muted" },
@@ -322,7 +323,7 @@ function renderSpellsTab(adv, rerender) {
     if (!s) continue;
     eqList.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, s.name),
+        h("strong", null, iconChip(spellIconKind(s)), s.name),
         spellTagRow(s),
       ),
       h("div", { class: "muted" }, s.blurb),
@@ -348,7 +349,7 @@ function renderSpellsTab(adv, rerender) {
     const allowed = isSpellAllowed(sid, cls);
     knownList.appendChild(h("div", { class: "parchment-card" + (allowed ? "" : " disabled") },
       h("div", { class: "row between" },
-        h("strong", null, s.name),
+        h("strong", null, iconChip(spellIconKind(s)), s.name),
         spellTagRow(s),
       ),
       h("div", { class: "muted" }, s.blurb),
@@ -380,7 +381,7 @@ function renderSpellsTab(adv, rerender) {
     const already = learned.includes(t.spell?.id);
     tomeList.appendChild(h("div", { class: "parchment-card" + (allowed && !already ? "" : " disabled") },
       h("div", { class: "row between" },
-        h("strong", null, t.item.name, " ×", t.inv.count),
+        h("strong", null, iconChip(t.spell ? spellIconKind(t.spell) : "item"), t.item.name, " ×", t.inv.count),
         t.spell ? spellTagRow(t.spell) : null,
       ),
       h("div", { class: "muted" }, t.spell?.blurb || "謎の頁。"),

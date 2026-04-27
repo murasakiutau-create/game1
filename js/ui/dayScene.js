@@ -6,6 +6,7 @@ import { RECIPES, ITEMS, CATEGORY_LABELS, priceForItem } from "../data/recipes.j
 import { MATERIALS, QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
 import { canCraft, craft } from "../systems/crafting.js";
 import { listOnShelf, unlistFromShelf } from "../systems/shop.js";
+import { itemIconKind, iconChip } from "./iconKind.js";
 
 let currentTab = "craft";
 
@@ -47,7 +48,7 @@ function renderCraftTab(refresh) {
     const ok = canCraft(r.id);
     grid.appendChild(h("div", { class: "parchment-card" + (ok ? "" : " disabled") },
       h("div", { class: "row between" },
-        h("strong", null, item.name),
+        h("strong", null, iconChip(itemIconKind(item)), item.name),
         h("span", { class: "tag" }, CATEGORY_LABELS[item.cat]),
       ),
       h("p", { class: "muted" }, item.blurb || ""),
@@ -90,7 +91,7 @@ function renderShopTab(refresh) {
     const askDefault = priceForItem(it.itemId, it.quality);
     stock.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
+        h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
         h("span", null, "在庫 " + it.count),
       ),
       h("div", { class: "muted" }, `相場 ${askDefault} G`),
@@ -120,7 +121,7 @@ function renderShopTab(refresh) {
     if (!item) continue;
     shelf.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[s.quality])),
+        h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[s.quality])),
         h("span", null, "棚 " + s.count),
       ),
       h("div", { class: "row" },
@@ -176,7 +177,7 @@ function renderStockTab() {
     if (!item) return null;
     return h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
+        h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
         h("span", null, "×" + it.count),
       ),
       h("div", { class: "muted" }, item.blurb || ""),
