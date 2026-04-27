@@ -336,10 +336,44 @@ input[type="number"], input[type="text"] {
 
 .adv-card .head, .item-card .head {
   display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.adv-card .head .head-text {
+  display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex: 1;
   gap: 0.4rem;
+  min-width: 0;
 }
+
+.class-portrait {
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--gold-deep);
+  background: radial-gradient(ellipse at 50% 35%, #f0e0b6 0%, #d8be7e 70%, #b89a5e 100%);
+  background-position: center 60%;
+  background-repeat: no-repeat;
+  background-size: 130%;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 240, 200, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.class-portrait.class-warrior    { background-image: url("../assets/portraits/warrior.png"); }
+.class-portrait.class-knight     { background-image: url("../assets/portraits/knight.png"); }
+.class-portrait.class-mage       { background-image: url("../assets/portraits/mage.png"); }
+.class-portrait.class-thief      { background-image: url("../assets/portraits/thief.png"); }
+.class-portrait.class-herbalist  { background-image: url("../assets/portraits/herbalist.png"); }
+.class-portrait.class-hunter     { background-image: url("../assets/portraits/hunter.png"); }
+.class-portrait.class-woodcutter { background-image: url("../assets/portraits/woodcutter.png"); }
+.class-portrait.class-miner      { background-image: url("../assets/portraits/miner.png"); }
 
 .adv-card .stats {
   display: grid;

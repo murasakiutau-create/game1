@@ -10,6 +10,14 @@ export function rankSeal(rankId) {
   return h("span", { class: "rank-seal rank-" + rankId, title: `ランク${rankId}` }, rankId);
 }
 
+export function classPortrait(classId) {
+  return h("span", {
+    class: `class-portrait class-${classId}`,
+    role: "img",
+    "aria-label": CLASSES[classId]?.label || classId,
+  });
+}
+
 export function advSummary(adv) {
   const cls = CLASSES[adv.classId];
   const rank = RANKS[adv.rankId];
@@ -17,8 +25,11 @@ export function advSummary(adv) {
   const equippedSpells = (state.equippedSpells[adv.id] || []).length;
   return h("div", { class: "adv-card" + (adv.busy ? " busy" : "") + (adv.injured ? " injured" : "") },
     h("div", { class: "head" },
-      h("h3", null, adv.name, " ", rankSeal(adv.rankId)),
-      h("span", { class: "tag" }, cls.label),
+      classPortrait(adv.classId),
+      h("div", { class: "head-text" },
+        h("h3", null, adv.name, " ", rankSeal(adv.rankId)),
+        h("span", { class: "tag" }, cls.label),
+      ),
     ),
     h("div", { class: "muted" }, `Lv ${adv.level}　経験値 ${adv.exp}`),
     h("div", { class: "stats" },
