@@ -264,7 +264,7 @@ function openGearPicker(adv, slot, parentRerender) {
   for (const c of candidates) {
     list.appendChild(h("div", { class: "parchment-card selectable" },
       h("div", { class: "row between" },
-        h("strong", null, iconChip(slot === "weapon" ? "weapon" : slot === "armor" ? "armor" : "item"), c.eq.name),
+        h("strong", null, iconChip(slot === "weapon" ? "weapon" : "armor"), c.eq.name),
         h("span", { class: "tag" }, CAT_LABELS[c.eq.cat] + " ×" + c.inv.count),
       ),
       h("div", { class: "muted" },
