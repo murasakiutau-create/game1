@@ -1,6 +1,15 @@
+/* Hiragana: revert to Oradano for the retro 築地体仮名 look. */
 @font-face {
-  font-family: "NewTegomin";
-  src: url("../assets/fonts/NewTegomin-Regular.ttf") format("truetype");
+  font-family: "OradanoKana";
+  src: url("../assets/fonts/OradanoGSRR.ttf") format("truetype");
+  unicode-range: U+3040-309F, U+30FC, U+FF66-FF9F;
+  font-display: swap;
+}
+
+/* Kanji + Latin + everything else: 異世明 (Source Han Serif derivative, SIL OFL 1.1). */
+@font-face {
+  font-family: "Isemin";
+  src: url("../assets/fonts/Isemin.otf") format("opentype");
   font-display: swap;
 }
 
@@ -31,7 +40,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "NewTegomin", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
+  font-family: "OradanoKana", "Isemin", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
   font-feature-settings: "palt" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
