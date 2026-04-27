@@ -41,15 +41,16 @@ function pickRank(tier) {
   return "F";
 }
 
-export function payWages() {
+export function payWagesForParty(advIds) {
   let total = 0;
-  for (const adv of state.party) {
-    const wage = RANKS[adv.rankId].dailyWage;
-    total += wage;
+  for (const advId of advIds) {
+    const adv = state.party.find(a => a.id === advId);
+    if (!adv) continue;
+    total += RANKS[adv.rankId].dailyWage;
   }
   state.gold = Math.max(0, state.gold - total);
   if (total > 0) {
-    pushLog({ kind: "system", summary: `日給 ${total} G を支払った。` });
+    pushLog({ kind: "system", summary: `派遣手当 ${total} G を支払った（${advIds.length}名）。` });
   }
   return total;
 }
@@ -61,7 +62,14 @@ export function advancePhase(opts = {}) {
   const i = order.indexOf(state.phase);
 
   if (state.phase === "morning") {
-    // dispatched adventurers actually leave; resolution happens at evening.
+    // Charge wages for everyone being sent today, then move parties from
+    // "pending" to "out". They will return next morning.
+    for (const p of state.pendingDispatch) {
+      if (!p.advIds || p.advIds.length === 0) continue;
+      payWagesForParty(p.advIds);
+      state.outOnDispatch.push(p);
+    }
+    state.pendingDispatch = [];
     state.phase = "day";
     return;
   }
@@ -74,39 +82,42 @@ export function advancePhase(opts = {}) {
   }
 
   if (state.phase === "evening") {
-    // Resolve dispatches if not resolved yet (party-based)
-    if (state.dispatchResults.length === 0 && state.pendingDispatch.length > 0) {
-      for (const p of state.pendingDispatch) {
-        // Backwards-compatibility: legacy {advId, locId} entries become 1-member parties
-        const party = p.advIds ? p : { id: "legacy", locId: p.locId, advIds: [p.advId] };
-        const r = resolvePartyDispatch(party);
-        if (r) state.dispatchResults.push(r);
-      }
-      for (const adv of state.party) adv.busy = false;
-    }
+    // Dispatched advs are still away — they return next morning.
     state.phase = "night";
     return;
   }
 
   if (state.phase === "night") {
     // Roll forward a day
-    payWages();
     state.day += 1;
     state.phase = "morning";
     state.pendingDispatch = [];
-    state.dispatchResults = [];
     state.bookkeeping = { soldToday: 0, earnedToday: 0, customerLogToday: [] };
     state.researchedToday = 0;
-    // Heal lightly + clear injury after a full rest day
+
+    // Heal advs who STAYED home (rest day)
+    const awayIds = new Set();
+    for (const p of state.outOnDispatch) for (const id of p.advIds || []) awayIds.add(id);
     for (const adv of state.party) {
+      if (awayIds.has(adv.id)) continue; // resolution will adjust their HP
       if (adv.injured) {
         adv.injured = false;
         adv.hp = Math.max(adv.hp, Math.floor(adv.maxHp * 0.6));
-        pushLog({ kind: "system", advId: adv.id, summary: `${adv.name}は傷を癒し、明朝から再出勤可能。` });
+        pushLog({ kind: "system", advId: adv.id, summary: `${adv.name}は傷を癒し、再出勤可能。` });
       } else {
         adv.hp = Math.min(adv.maxHp, adv.hp + Math.floor(adv.maxHp * 0.4));
       }
     }
+
+    // Resolve parties that were out — fill dispatchResults for the morning recap
+    state.dispatchResults = [];
+    for (const p of state.outOnDispatch) {
+      const party = p.advIds ? p : { id: "legacy", locId: p.locId, advIds: [p.advId] };
+      const r = resolvePartyDispatch(party);
+      if (r) state.dispatchResults.push(r);
+    }
+    state.outOnDispatch = [];
+
     refreshMarket();
     return;
   }

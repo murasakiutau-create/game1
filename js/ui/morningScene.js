@@ -3,6 +3,8 @@
 import { h, clear, btn, panel, modal, toast, tabs, confirmModal } from "./components.js";
 import { state, repTier, generateAdventurer, rng, syncRng,
          PARTY_MAX, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
+import { openReturnModal } from "./returnModal.js";
+import { RANKS } from "../data/ranks.js";
 import { CLASSES } from "../data/adventurers.js";
 import { RANKS } from "../data/ranks.js";
 import { LOCATIONS, LOCATION_ORDER } from "../data/locations.js";
@@ -14,12 +16,30 @@ import { advSummary, rankSeal } from "./advCard.js";
 import { ELEMENTS, elementLabel } from "../data/elements.js";
 import { PASSIVES, PASSIVE_ORDER, passivesAllowedForClass, passiveSlotsForRank } from "../data/passives.js";
 
+// Tracks which day we already auto-opened the return modal for, so it
+// only pops up once per new morning even if the scene re-renders.
+let returnModalShownForDay = 0;
+
 export function renderMorningScene(host, { onAdvance, refresh }) {
   clear(host);
   const phase = h("section", { class: "stack" });
   phase.appendChild(panel("朝　— 派遣の支度",
     h("p", { class: "muted" }, "パーティを編成して採取地へ送り出します。1パーティ最大5名、複数パーティを別々の場所に派遣できます。"),
   ));
+
+  // Auto-show "returned from dispatch" modal once per new morning
+  if ((state.dispatchResults || []).length > 0 && returnModalShownForDay !== state.day) {
+    returnModalShownForDay = state.day;
+    setTimeout(() => openReturnModal(refresh), 60);
+  }
+  // Re-open button while results are unviewed
+  if ((state.dispatchResults || []).length > 0) {
+    phase.appendChild(panel("帰還報告",
+      h("div", { class: "stack" },
+        h("p", { class: "muted" }, `${state.dispatchResults.length}組の派遣結果が届いています。`),
+        btn("帰還報告を見る", () => openReturnModal(refresh), { primary: true, block: true }),
+      ), "✦"));
+  }
 
   // Pending parties panel
   const partiesBody = h("div", { class: "stack" });
@@ -117,12 +137,24 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
 
   // Advance button
   const totalDispatched = state.pendingDispatch.reduce((s, p) => s + (p.advIds?.length || 0), 0);
+  let pendingWages = 0;
+  for (const p of state.pendingDispatch) {
+    for (const id of (p.advIds || [])) {
+      const a = state.party.find(x => x.id === id);
+      if (a) pendingWages += RANKS[a.rankId].dailyWage;
+    }
+  }
+  const canAfford = state.gold >= pendingWages;
   phase.appendChild(panel("",
     h("div", { class: "stack" },
       h("p", { class: "muted" }, totalDispatched > 0
-        ? `${state.pendingDispatch.length}組／計${totalDispatched}名を派遣準備中。昼の店舗営業に進みます。`
+        ? `${state.pendingDispatch.length}組／計${totalDispatched}名を派遣準備中。送り出す際に派遣手当 ${pendingWages} G を支払います。冒険者は明朝に帰還します。`
         : "派遣しなくても店舗営業に進めます（素材は集まりません）。"),
-      btn(totalDispatched > 0 ? "パーティを送り出す → 昼へ" : "そのまま昼へ", () => {
+      btn(totalDispatched > 0 ? `パーティを送り出す（手当 ${pendingWages} G） → 昼へ` : "そのまま昼へ", () => {
+        if (totalDispatched > 0 && !canAfford) {
+          toast("派遣手当を支払う金貨が足りません。", { error: true });
+          return;
+        }
         for (const p of state.pendingDispatch) {
           for (const advId of (p.advIds || [])) {
             const adv = state.party.find(a => a.id === advId);
@@ -130,7 +162,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
           }
         }
         onAdvance();
-      }, { primary: true, block: true }),
+      }, { primary: true, block: true, disabled: totalDispatched > 0 && !canAfford }),
     ), "❦"));
 
   host.appendChild(phase);

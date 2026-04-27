@@ -40,8 +40,9 @@ export const state = {
   equippedSpells: {},   // advId -> [spellId] (<=slot count)
   equippedGear: {},     // advId -> { weapon, armor, trinket }
   passives: {},         // advId -> [passiveId] (<=rank.passiveSlots)
-  pendingDispatch: [],  // [{ id, locId, advIds:[...] }] — parties of 1..5
-  dispatchResults: [],  // populated at evening (per-party)
+  pendingDispatch: [],  // [{ id, locId, advIds:[...] }] — parties planned for today
+  outOnDispatch: [],    // [{ id, locId, advIds:[...] }] — parties currently away (return next morning)
+  dispatchResults: [],  // populated next morning (per-party)
   recipes: {},          // recipeId -> { unlocked, points }
   strategies: {},       // advId -> { preset: "standard", custom: [...] }
   logs: [],             // newest-first; capped to ~30 days
@@ -250,6 +251,7 @@ export function newGame() {
   state.equippedGear = {};
   state.passives = {};
   state.pendingDispatch = [];
+  state.outOnDispatch = [];
   state.dispatchResults = [];
   state.recipes = {};
   ensureRecipeMap();
@@ -286,7 +288,8 @@ export function loadFromObject(obj) {
   state.rngState = obj.rngState || obj.seed || 1;
   rng.setState(state.rngState);
   ensureRecipeMap();
-  // future: migrations
+  // Migration: introduced state.outOnDispatch
+  if (!Array.isArray(state.outOnDispatch)) state.outOnDispatch = [];
 }
 
 export function snapshot() {

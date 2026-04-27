@@ -7,49 +7,34 @@ import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
 import { CLASSES } from "../data/adventurers.js";
 import { ITEMS } from "../data/recipes.js";
 
+function LOCATIONS_BY_ID(id) { return LOCATIONS[id]?.name; }
+
 export function renderEveningScene(host, { onAdvance, refresh }) {
   clear(host);
   const wrap = h("section", { class: "stack" });
 
-  wrap.appendChild(panel("夕　— 帰還報告と売上",
-    h("p", { class: "muted" }, "派遣した冒険者の帰還と昼の売上をご報告します。")
+  wrap.appendChild(panel("夕　— 売上のまとめ",
+    h("p", { class: "muted" }, "昼の売上を確認します。派遣した冒険者は明朝に帰還します。")
   ));
 
-  // Dispatch results — party-grouped
-  const dispatched = state.dispatchResults || [];
-  const drBody = h("div", { class: "stack" });
-  if (dispatched.length === 0) drBody.appendChild(h("p", { class: "muted" }, "今日は誰も派遣しませんでした。"));
-  for (const r of dispatched) {
-    // Backwards-compat: legacy single-adv result
-    const isParty = Array.isArray(r.members);
-    const titleLeft = isParty
-      ? `パーティ（${r.members.length}名） — ${r.locName}`
-      : `${r.advName}（${CLASSES[state.party.find(a => a.id === r.advId)?.classId]?.label || ""}） — ${r.locName}`;
-    const memberRow = isParty
-      ? h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3em", marginTop: "0.3em" } },
-          ...r.members.map(m => h("span", { class: "tag" + (m.injured ? " wax" : "") },
-            `${m.advName}（${CLASSES[m.classId]?.label || ""}）`,
-            m.injured ? " 重傷" : ` HP ${m.hp}/${m.maxHp}`)))
-      : null;
-    drBody.appendChild(h("div", { class: "parchment-card" },
-      h("div", { class: "row between" },
-        h("strong", null, titleLeft),
-        h("span", { class: "tag " + (r.outcome === "injured" ? "wax" : r.outcome === "flee" ? "" : "gold") },
-          r.outcome === "injured" ? "重傷者あり" : r.outcome === "flee" ? "敗走" : "無事帰還"),
-      ),
-      memberRow,
-      r.encounters && r.encounters.length > 0
-        ? h("p", { class: "muted" }, `戦闘 ${r.encounters.length} 件 ── `, btn("ログを見る", () => showCombatLogs(r), { ghost: true, small: true }))
-        : h("p", { class: "muted" }, "戦闘なし。"),
-      h("p", null, "採取：",
-        r.drops.length === 0
-          ? h("span", { class: "muted" }, "（成果なし）")
-          : r.drops.map(d => h("span", { class: "tag", style: { marginRight: "0.3em" } },
-              `${MATERIALS[d.matId]?.name || d.matId} ${QUALITY_LABEL[d.q]} ×${d.n}`)),
-      ),
-    ));
+  // Adventurers still away
+  const out = state.outOnDispatch || [];
+  if (out.length > 0) {
+    const awayBody = h("div", { class: "stack" });
+    for (const p of out) {
+      const memberNames = (p.advIds || [])
+        .map(id => state.party.find(a => a.id === id)?.name).filter(Boolean).join("、");
+      awayBody.appendChild(h("div", { class: "parchment-card" },
+        h("div", { class: "row between" },
+          h("strong", null, LOCATIONS_BY_ID(p.locId) || p.locId),
+          h("span", { class: "tag" }, `${p.advIds?.length || 0}名`),
+        ),
+        h("div", { class: "muted" }, memberNames || "—"),
+        h("div", { class: "muted", style: { marginTop: "0.3rem" } }, "明朝の帰還を待ちます。"),
+      ));
+    }
+    wrap.appendChild(panel("派遣中の冒険者", awayBody, "✦"));
   }
-  wrap.appendChild(panel("派遣の結果", drBody, "✦"));
 
   // Sale digest
   const bk = state.bookkeeping;
@@ -73,20 +58,4 @@ export function renderEveningScene(host, { onAdvance, refresh }) {
     ), "❦"));
 
   host.appendChild(wrap);
-}
-
-function showCombatLogs(result) {
-  const body = h("div", { class: "stack" });
-  for (const enc of result.encounters || []) {
-    body.appendChild(h("div", { class: "log-entry" },
-      h("strong", null, `vs ${enc.log[0]?.text || "敵"}`),
-      h("div", { class: "combat-log" },
-        ...(enc.log || []).map(line => h("div", { class: line.tag }, line.text))
-      ),
-    ));
-  }
-  const titleSubject = Array.isArray(result.members)
-    ? `パーティ（${result.members.map(m => m.advName).join("、")}）`
-    : result.advName;
-  modal(body, { title: `${titleSubject} の戦闘記録 — ${result.locName}` });
 }
