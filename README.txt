@@ -38,8 +38,10 @@
     ても同様）。
 
 ■ フォントについて
-  Oradano明朝GSRRフォント（内田明氏 制作）を同梱しています。
-  再配布自由・商用可。詳細は assets/fonts/OradanoGSRR-README.txt を参照。
+  「大正活字っぽい？フォント T5（taisyokatujippoi7T5）」を同梱して
+  います。梅明朝＋源雲明朝＋GL-築地5号仮名等のミックス。SIL Open
+  Font License 1.1 の下で使用。
+  詳細は assets/fonts/taisyoKatuji_README.txt を参照。
 
 ■ 配布物
   index.html       : エントリ
