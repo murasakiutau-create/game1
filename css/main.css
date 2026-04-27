@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "TaisyoKatuji";
-  src: url("../assets/fonts/taisyokatujippoi7T5.ttf") format("truetype");
+  font-family: "NewTegomin";
+  src: url("../assets/fonts/NewTegomin-Regular.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -31,7 +31,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "TaisyoKatuji", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
+  font-family: "NewTegomin", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS PMincho", serif;
   font-feature-settings: "palt" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
