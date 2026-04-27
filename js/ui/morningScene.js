@@ -1,7 +1,8 @@
 // Morning scene: party overview, dispatch wizard per adventurer, hire market.
 
 import { h, clear, btn, panel, modal, toast, tabs, confirmModal } from "./components.js";
-import { state, repTier, generateAdventurer, rng, syncRng } from "../state.js";
+import { state, repTier, generateAdventurer, rng, syncRng,
+         PARTY_MAX, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
 import { CLASSES } from "../data/adventurers.js";
 import { RANKS } from "../data/ranks.js";
 import { LOCATIONS, LOCATION_ORDER } from "../data/locations.js";
@@ -17,26 +18,72 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
   clear(host);
   const phase = h("section", { class: "stack" });
   phase.appendChild(panel("朝　— 派遣の支度",
-    h("p", { class: "muted" }, "冒険者を選び、装備・魔法・戦略を整え、採取地に送り出します。"),
+    h("p", { class: "muted" }, "パーティを編成して採取地へ送り出します。1パーティ最大5名、複数パーティを別々の場所に派遣できます。"),
   ));
 
-  // Party panel
+  // Pending parties panel
+  const partiesBody = h("div", { class: "stack" });
+  if (state.pendingDispatch.length === 0) {
+    partiesBody.appendChild(h("p", { class: "muted" }, "編成中のパーティはありません。"));
+  } else {
+    for (const pt of state.pendingDispatch) {
+      const loc = LOCATIONS[pt.locId];
+      const memberCards = h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3em" } });
+      for (const advId of (pt.advIds || [])) {
+        const adv = state.party.find(a => a.id === advId);
+        if (!adv) continue;
+        memberCards.appendChild(h("span", { class: "tag gold" }, `${adv.name}（${CLASSES[adv.classId]?.label || ""}）`));
+      }
+      partiesBody.appendChild(h("div", { class: "parchment-card" },
+        h("div", { class: "row between" },
+          h("strong", null, `${loc?.name || "—"}　`,
+            h("span", { class: "tag wax" }, `危険度 ${loc?.danger ?? "?"}`)),
+          h("span", { class: "tag" }, `${(pt.advIds || []).length} / ${PARTY_MAX}名`),
+        ),
+        memberCards,
+        h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
+          btn("メンバー編集", () => openPartyEditor(pt, refresh), { small: true, primary: true }),
+          btn("派遣先変更", () => openLocationPicker(pt, refresh), { small: true, dark: true }),
+          btn("解散", () => {
+            confirmModal({
+              title: "パーティ解散",
+              message: `${loc?.name} へのパーティを解散します。`,
+              confirmLabel: "解散する",
+              danger: true,
+              onConfirm: () => {
+                for (const advId of pt.advIds) {
+                  const adv = state.party.find(a => a.id === advId);
+                  if (adv) adv.busy = false;
+                }
+                state.pendingDispatch = state.pendingDispatch.filter(x => x.id !== pt.id);
+                refresh();
+              },
+            });
+          }, { small: true, ghost: true }),
+        ),
+      ));
+    }
+  }
+  partiesBody.appendChild(btn("＋ 新しいパーティを編成", () => openPartyFormation(refresh),
+    { primary: true, block: true }));
+  phase.appendChild(panel(`派遣パーティ（${state.pendingDispatch.length}組）`, partiesBody, "✦"));
+
+  // Party panel — roster overview
   const partyBody = h("div", { class: "card-grid" });
   if (state.party.length === 0) {
     partyBody.appendChild(h("div", { class: "parchment-card empty" }, "雇用市場から冒険者を雇いましょう。"));
   } else {
     for (const adv of state.party) {
-      const isPending = !!state.pendingDispatch.find(p => p.advId === adv.id);
-      const card = h("div", { class: "parchment-card selectable" + (isPending ? " selected" : "") + (adv.injured ? " disabled" : "") },
+      const pt = partyForAdv(adv.id);
+      const card = h("div", { class: "parchment-card selectable" + (pt ? " selected" : "") + (adv.injured ? " disabled" : "") },
         advSummary(adv),
         h("div", { class: "muted", style: { marginTop: "0.4rem" } },
-          isPending ? `→ ${LOCATIONS[state.pendingDispatch.find(p => p.advId === adv.id).locId].name} に派遣予定` :
+          pt ? `→ ${LOCATIONS[pt.locId]?.name || ""} へ派遣予定` :
           adv.injured ? "本日は休養（重傷）" : "未派遣"),
-        h("div", { class: "row", style: { marginTop: "0.5rem" } },
-          btn("詳細・派遣", () => openAdventurerSheet(adv, refresh), { small: true, primary: !isPending && !adv.injured, ghost: isPending || adv.injured }),
-          isPending ? btn("派遣を取消", () => {
-            state.pendingDispatch = state.pendingDispatch.filter(p => p.advId !== adv.id);
-            adv.busy = false;
+        h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
+          btn("詳細", () => openAdventurerSheet(adv, refresh), { small: true, primary: true }),
+          pt ? btn("パーティから外す", () => {
+            removeAdvFromParties(adv.id);
             refresh();
           }, { small: true, ghost: true }) : null,
         ),
@@ -69,20 +116,21 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
   phase.appendChild(panel(`雇用市場  (${state.market.length}名)`, mktBody, "⚖"));
 
   // Advance button
-  const allGood = state.party.length === 0 || state.pendingDispatch.length > 0 || state.party.every(a => a.injured);
+  const totalDispatched = state.pendingDispatch.reduce((s, p) => s + (p.advIds?.length || 0), 0);
   phase.appendChild(panel("",
     h("div", { class: "stack" },
-      h("p", { class: "muted" }, state.pendingDispatch.length > 0
-        ? `${state.pendingDispatch.length}名を派遣準備中。昼の店舗営業に進みます。`
+      h("p", { class: "muted" }, totalDispatched > 0
+        ? `${state.pendingDispatch.length}組／計${totalDispatched}名を派遣準備中。昼の店舗営業に進みます。`
         : "派遣しなくても店舗営業に進めます（素材は集まりません）。"),
-      btn(state.pendingDispatch.length > 0 ? "冒険者を送り出す → 昼へ" : "そのまま昼へ", () => {
-        // mark dispatched busy
+      btn(totalDispatched > 0 ? "パーティを送り出す → 昼へ" : "そのまま昼へ", () => {
         for (const p of state.pendingDispatch) {
-          const adv = state.party.find(a => a.id === p.advId);
-          if (adv) adv.busy = true;
+          for (const advId of (p.advIds || [])) {
+            const adv = state.party.find(a => a.id === advId);
+            if (adv) adv.busy = true;
+          }
         }
         onAdvance();
-      }, { primary: true, block: true, disabled: !allGood }),
+      }, { primary: true, block: true }),
     ), "❦"));
 
   host.appendChild(phase);
@@ -499,7 +547,7 @@ function schoolSelect(rule, cls, onChange) {
   return sel;
 }
 
-// ---- Dispatch ----
+// ---- Dispatch tab (per-adv): join existing party, create solo, or leave ----
 
 function renderDispatchTab(adv, onDispatched) {
   const wrap = h("div", { class: "stack" });
@@ -507,6 +555,43 @@ function renderDispatchTab(adv, onDispatched) {
     wrap.appendChild(h("p", null, "重傷のため本日は派遣できません。明日まで休養させてください。"));
     return wrap;
   }
+  const current = partyForAdv(adv.id);
+  if (current) {
+    const loc = LOCATIONS[current.locId];
+    wrap.appendChild(h("p", null, `現在 ${loc?.name || "—"} へのパーティに所属中（${current.advIds.length}/${PARTY_MAX}名）。`));
+    wrap.appendChild(btn("パーティから外す", () => {
+      removeAdvFromParties(adv.id);
+      toast(`${adv.name}をパーティから外しました。`);
+      onDispatched();
+    }, { ghost: true }));
+    return wrap;
+  }
+  // Existing parties (with capacity)
+  const open = state.pendingDispatch.filter(p => (p.advIds?.length || 0) < PARTY_MAX);
+  if (open.length > 0) {
+    wrap.appendChild(h("h4", null, "既存のパーティに加わる"));
+    for (const pt of open) {
+      const loc = LOCATIONS[pt.locId];
+      wrap.appendChild(h("div", { class: "parchment-card selectable" },
+        h("div", { class: "row between" },
+          h("strong", null, loc?.name || "—"),
+          h("span", { class: "tag" }, `${pt.advIds.length}/${PARTY_MAX}名`),
+        ),
+        h("div", { class: "muted" }, pt.advIds.map(id => state.party.find(a => a.id === id)?.name).filter(Boolean).join("、")),
+        h("div", { class: "row", style: { marginTop: "0.4rem" } },
+          btn("このパーティに加わる", () => {
+            pt.advIds.push(adv.id);
+            adv.busy = true;
+            toast(`${adv.name}が ${loc?.name} 行きパーティに加わりました。`);
+            onDispatched();
+          }, { primary: true, small: true }),
+        ),
+      ));
+    }
+    wrap.appendChild(h("div", { class: "divider" }));
+  }
+  // Create new solo party
+  wrap.appendChild(h("h4", null, "新しく単独で出発する"));
   wrap.appendChild(h("p", { class: "muted" }, "送り出す採取地を選んでください。"));
   const grid = h("div", { class: "card-grid" });
   for (const lid of LOCATION_ORDER) {
@@ -516,9 +601,7 @@ function renderDispatchTab(adv, onDispatched) {
       h("p", { class: "muted" }, loc.blurb),
       h("div", { class: "row" },
         btn("ここへ派遣", () => {
-          // remove existing pending for this adv
-          state.pendingDispatch = state.pendingDispatch.filter(p => p.advId !== adv.id);
-          state.pendingDispatch.push({ advId: adv.id, locId: lid });
+          state.pendingDispatch.push({ id: newPartyId(), locId: lid, advIds: [adv.id] });
           adv.busy = true;
           toast(`${adv.name}を ${loc.name} へ送り出します。`);
           onDispatched();
@@ -528,4 +611,146 @@ function renderDispatchTab(adv, onDispatched) {
   }
   wrap.appendChild(grid);
   return wrap;
+}
+
+// ---- New party formation wizard ----
+
+export function openPartyFormation(refresh) {
+  let step = "loc";
+  let chosenLoc = null;
+  let chosenIds = new Set();
+  const body = h("div", { class: "stack" });
+
+  function rerender() {
+    body.innerHTML = "";
+    if (step === "loc") {
+      body.appendChild(h("p", { class: "muted" }, "1. 派遣先を選んでください。"));
+      const grid = h("div", { class: "card-grid" });
+      for (const lid of LOCATION_ORDER) {
+        const loc = LOCATIONS[lid];
+        grid.appendChild(h("div", { class: "parchment-card selectable" },
+          h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
+          h("p", { class: "muted" }, loc.blurb),
+          btn("ここに決める", () => { chosenLoc = lid; step = "members"; rerender(); }, { primary: true, small: true }),
+        ));
+      }
+      body.appendChild(grid);
+    } else if (step === "members") {
+      const loc = LOCATIONS[chosenLoc];
+      body.appendChild(h("p", { class: "muted" }, `2. ${loc.name} へ向かうメンバーを最大 ${PARTY_MAX} 名まで選んでください（${chosenIds.size}/${PARTY_MAX}）。`));
+      const grid = h("div", { class: "card-grid" });
+      for (const adv of state.party) {
+        const inOther = !!partyForAdv(adv.id);
+        const cant = adv.injured || inOther;
+        const sel = chosenIds.has(adv.id);
+        grid.appendChild(h("div", { class: "parchment-card selectable" + (sel ? " selected" : "") + (cant ? " disabled" : "") },
+          advSummary(adv),
+          h("div", { class: "muted", style: { marginTop: "0.3rem" } },
+            adv.injured ? "重傷で参加不可" : inOther ? "別パーティに所属中" : sel ? "編成中" : "選択可"),
+          h("div", { class: "row", style: { marginTop: "0.4rem" } },
+            btn(sel ? "外す" : "加える", () => {
+              if (cant) return;
+              if (sel) chosenIds.delete(adv.id);
+              else if (chosenIds.size < PARTY_MAX) chosenIds.add(adv.id);
+              else toast(`パーティは最大 ${PARTY_MAX} 名までです。`, { error: true });
+              rerender();
+            }, { primary: !sel && !cant, ghost: sel || cant, small: true, disabled: cant }),
+          ),
+        ));
+      }
+      body.appendChild(grid);
+      body.appendChild(h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
+        btn("← 派遣先を選び直す", () => { step = "loc"; rerender(); }, { ghost: true, small: true }),
+        btn(`このメンバーで結成（${chosenIds.size}名）`, () => {
+          if (chosenIds.size === 0) { toast("最低1名は選んでください。", { error: true }); return; }
+          const partyObj = { id: newPartyId(), locId: chosenLoc, advIds: [...chosenIds] };
+          state.pendingDispatch.push(partyObj);
+          for (const id of chosenIds) {
+            const a = state.party.find(x => x.id === id);
+            if (a) a.busy = true;
+          }
+          const loc = LOCATIONS[chosenLoc];
+          toast(`${loc.name} 行きパーティを結成しました（${chosenIds.size}名）。`);
+          m.close();
+          refresh();
+        }, { primary: chosenIds.size > 0, disabled: chosenIds.size === 0, small: true }),
+      ));
+    }
+  }
+  rerender();
+  const m = modal(body, { title: "パーティを編成" });
+}
+
+// ---- Edit existing party (add/remove members) ----
+
+function openPartyEditor(pt, refresh) {
+  const body = h("div", { class: "stack" });
+  function rerender() {
+    body.innerHTML = "";
+    const loc = LOCATIONS[pt.locId];
+    body.appendChild(h("p", { class: "muted" },
+      `${loc?.name || "—"} 行きパーティ：${pt.advIds.length}/${PARTY_MAX} 名`));
+    const grid = h("div", { class: "card-grid" });
+    for (const adv of state.party) {
+      const inThis = pt.advIds.includes(adv.id);
+      const inOther = !inThis && !!partyForAdv(adv.id);
+      const cant = adv.injured || inOther;
+      grid.appendChild(h("div", { class: "parchment-card selectable" + (inThis ? " selected" : "") + (cant ? " disabled" : "") },
+        advSummary(adv),
+        h("div", { class: "muted", style: { marginTop: "0.3rem" } },
+          adv.injured ? "重傷" : inOther ? "別パーティに所属中" : inThis ? "在籍中" : "未配属"),
+        h("div", { class: "row", style: { marginTop: "0.4rem" } },
+          btn(inThis ? "外す" : "加える", () => {
+            if (inThis) {
+              pt.advIds = pt.advIds.filter(id => id !== adv.id);
+              adv.busy = false;
+            } else {
+              if (cant) return;
+              if (pt.advIds.length >= PARTY_MAX) { toast(`最大 ${PARTY_MAX} 名です。`, { error: true }); return; }
+              pt.advIds.push(adv.id);
+              adv.busy = true;
+            }
+            rerender();
+          }, { primary: !inThis && !cant, ghost: inThis || cant, small: true, disabled: cant }),
+        ),
+      ));
+    }
+    body.appendChild(grid);
+    body.appendChild(h("div", { class: "row", style: { marginTop: "0.5rem" } },
+      btn("完了", () => {
+        if (pt.advIds.length === 0) {
+          state.pendingDispatch = state.pendingDispatch.filter(x => x.id !== pt.id);
+        }
+        m.close();
+        refresh();
+      }, { primary: true }),
+    ));
+  }
+  rerender();
+  const m = modal(body, { title: "メンバー編成", onClose: refresh });
+}
+
+// ---- Change a party's location ----
+
+function openLocationPicker(pt, refresh) {
+  const body = h("div", { class: "stack" });
+  body.appendChild(h("p", { class: "muted" }, "新しい派遣先を選んでください。"));
+  const grid = h("div", { class: "card-grid" });
+  for (const lid of LOCATION_ORDER) {
+    const loc = LOCATIONS[lid];
+    const isCurrent = lid === pt.locId;
+    grid.appendChild(h("div", { class: "parchment-card selectable" + (isCurrent ? " selected" : "") },
+      h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
+      h("p", { class: "muted" }, loc.blurb),
+      btn(isCurrent ? "現在の派遣先" : "ここへ変更", () => {
+        if (isCurrent) return;
+        pt.locId = lid;
+        toast(`派遣先を ${loc.name} に変更しました。`);
+        m.close();
+        refresh();
+      }, { primary: !isCurrent, disabled: isCurrent, small: true }),
+    ));
+  }
+  body.appendChild(grid);
+  const m = modal(body, { title: "派遣先を変更" });
 }

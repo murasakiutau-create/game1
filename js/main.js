@@ -8,6 +8,8 @@ import { renderDayScene } from "./ui/dayScene.js";
 import { renderEveningScene } from "./ui/eveningScene.js";
 import { renderNightScene } from "./ui/nightScene.js";
 import { openLogViewer } from "./ui/logScene.js";
+import { openPartyViewer } from "./ui/partyViewer.js";
+import { openMarketViewer } from "./ui/marketViewer.js";
 import { advancePhase, refreshMarket } from "./systems/time.js";
 import { toast } from "./ui/components.js";
 
@@ -35,8 +37,8 @@ function render() {
   renderShell(root, scene, {
     openLogs: () => openLogViewer(),
     gotoTitle: () => { mode = "title"; render(); },
-    openParty: () => { state.phase = "morning"; render(); },
-    openMarket: () => { state.phase = "morning"; render(); },
+    openParty: () => openPartyViewer(render),
+    openMarket: () => openMarketViewer(render),
   });
 }
 

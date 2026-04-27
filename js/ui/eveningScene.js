@@ -15,18 +15,29 @@ export function renderEveningScene(host, { onAdvance, refresh }) {
     h("p", { class: "muted" }, "派遣した冒険者の帰還と昼の売上をご報告します。")
   ));
 
-  // Dispatch results
+  // Dispatch results — party-grouped
   const dispatched = state.dispatchResults || [];
   const drBody = h("div", { class: "stack" });
   if (dispatched.length === 0) drBody.appendChild(h("p", { class: "muted" }, "今日は誰も派遣しませんでした。"));
   for (const r of dispatched) {
-    const cls = CLASSES[state.party.find(a => a.id === r.advId)?.classId];
+    // Backwards-compat: legacy single-adv result
+    const isParty = Array.isArray(r.members);
+    const titleLeft = isParty
+      ? `パーティ（${r.members.length}名） — ${r.locName}`
+      : `${r.advName}（${CLASSES[state.party.find(a => a.id === r.advId)?.classId]?.label || ""}） — ${r.locName}`;
+    const memberRow = isParty
+      ? h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3em", marginTop: "0.3em" } },
+          ...r.members.map(m => h("span", { class: "tag" + (m.injured ? " wax" : "") },
+            `${m.advName}（${CLASSES[m.classId]?.label || ""}）`,
+            m.injured ? " 重傷" : ` HP ${m.hp}/${m.maxHp}`)))
+      : null;
     drBody.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, `${r.advName}（${cls?.label || ""}） — ${r.locName}`),
+        h("strong", null, titleLeft),
         h("span", { class: "tag " + (r.outcome === "injured" ? "wax" : r.outcome === "flee" ? "" : "gold") },
-          r.outcome === "injured" ? "重傷で帰還" : r.outcome === "flee" ? "敗走" : "無事帰還"),
+          r.outcome === "injured" ? "重傷者あり" : r.outcome === "flee" ? "敗走" : "無事帰還"),
       ),
+      memberRow,
       r.encounters && r.encounters.length > 0
         ? h("p", { class: "muted" }, `戦闘 ${r.encounters.length} 件 ── `, btn("ログを見る", () => showCombatLogs(r), { ghost: true, small: true }))
         : h("p", { class: "muted" }, "戦闘なし。"),
@@ -74,5 +85,8 @@ function showCombatLogs(result) {
       ),
     ));
   }
-  modal(body, { title: `${result.advName} の戦闘記録 — ${result.locName}` });
+  const titleSubject = Array.isArray(result.members)
+    ? `パーティ（${result.members.map(m => m.advName).join("、")}）`
+    : result.advName;
+  modal(body, { title: `${titleSubject} の戦闘記録 — ${result.locName}` });
 }

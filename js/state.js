@@ -40,8 +40,8 @@ export const state = {
   equippedSpells: {},   // advId -> [spellId] (<=slot count)
   equippedGear: {},     // advId -> { weapon, armor, trinket }
   passives: {},         // advId -> [passiveId] (<=rank.passiveSlots)
-  pendingDispatch: [],  // [{ advId, locId, plannedAt:"morning" }]
-  dispatchResults: [],  // populated at evening
+  pendingDispatch: [],  // [{ id, locId, advIds:[...] }] — parties of 1..5
+  dispatchResults: [],  // populated at evening (per-party)
   recipes: {},          // recipeId -> { unlocked, points }
   strategies: {},       // advId -> { preset: "standard", custom: [...] }
   logs: [],             // newest-first; capped to ~30 days
@@ -133,6 +133,27 @@ export function removeItem(itemId, quality, n = 1) {
 // ----- adventurer factory -----
 let advIdCounter = 1;
 export function newAdvId() { return "adv_" + (advIdCounter++).toString(36) + "_" + Math.floor(Math.random() * 1e6).toString(36); }
+
+// ----- party helpers -----
+export const PARTY_MAX = 5;
+let partyIdCounter = 1;
+export function newPartyId() { return "pt_" + (partyIdCounter++).toString(36) + "_" + Math.floor(Math.random() * 1e6).toString(36); }
+
+export function partyForAdv(advId) {
+  for (const p of state.pendingDispatch) {
+    if (p && Array.isArray(p.advIds) && p.advIds.includes(advId)) return p;
+  }
+  return null;
+}
+
+export function removeAdvFromParties(advId) {
+  for (const p of state.pendingDispatch) {
+    p.advIds = (p.advIds || []).filter(id => id !== advId);
+  }
+  state.pendingDispatch = state.pendingDispatch.filter(p => (p.advIds || []).length > 0);
+  const adv = state.party.find(a => a.id === advId);
+  if (adv) adv.busy = false;
+}
 
 export function generateAdventurer(classId, rankId, rng_) {
   const cls = CLASSES[classId];

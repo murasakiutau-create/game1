@@ -2,7 +2,7 @@
 // Side effects (refresh market, run shop sim, drain wages, etc.) attach here.
 
 import { state, rng, syncRng, repTier, ensureRecipeMap, generateAdventurer } from "../state.js";
-import { resolveDispatch } from "./dispatch.js";
+import { resolveDispatch, resolvePartyDispatch } from "./dispatch.js";
 import { runShopSimulation } from "./shop.js";
 import { pushLog } from "./log.js";
 import { RANK_ORDER, RANKS, MARKET_WEIGHTS, rankRequirementMet } from "../data/ranks.js";
@@ -74,16 +74,15 @@ export function advancePhase(opts = {}) {
   }
 
   if (state.phase === "evening") {
-    // Resolve dispatches if not resolved yet
+    // Resolve dispatches if not resolved yet (party-based)
     if (state.dispatchResults.length === 0 && state.pendingDispatch.length > 0) {
       for (const p of state.pendingDispatch) {
-        const r = resolveDispatch(p.advId, p.locId);
+        // Backwards-compatibility: legacy {advId, locId} entries become 1-member parties
+        const party = p.advIds ? p : { id: "legacy", locId: p.locId, advIds: [p.advId] };
+        const r = resolvePartyDispatch(party);
         if (r) state.dispatchResults.push(r);
       }
-      // Clear busy flag on adventurers (they're back home now)
-      for (const adv of state.party) {
-        if (state.pendingDispatch.find(p => p.advId === adv.id)) adv.busy = false;
-      }
+      for (const adv of state.party) adv.busy = false;
     }
     state.phase = "night";
     return;

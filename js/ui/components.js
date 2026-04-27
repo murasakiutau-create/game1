@@ -29,6 +29,7 @@ export function btn(label, onClick, opts = {}) {
   const cls = ["btn"];
   if (opts.primary) cls.push("primary");
   if (opts.ghost) cls.push("ghost");
+  if (opts.dark) cls.push("dark");
   if (opts.small) cls.push("small");
   if (opts.block) cls.push("block");
   if (opts.className) cls.push(opts.className);

@@ -7,7 +7,7 @@ import { LOCATIONS, AMBIENT_DROP, DEFAULT_Q_BIAS } from "../data/locations.js";
 import { MATERIALS, QUALITY_LEVELS } from "../data/materials.js";
 import { EQUIPMENT } from "../data/equipment.js";
 import { PASSIVES } from "../data/passives.js";
-import { runEncounter } from "./encounter.js";
+import { runEncounter, runPartyEncounter } from "./encounter.js";
 import { pushLog } from "./log.js";
 
 function passiveEffects(adv) {
@@ -192,6 +192,138 @@ export function resolveDispatch(advId, locId) {
       advId,
       summary: `${adv.name} vs ${enc.log[0]?.text || ""}`,
       detail: { ...enc, locName: loc.name, advName: adv.name },
+    });
+  }
+  return result;
+}
+
+// =====================================================================
+// Party-aware dispatch resolution
+// =====================================================================
+
+function gatherForParty(loc, party, gearList, buffs, passiveList) {
+  // Sum gather rolls: base + 2 per extra member + each member's gear/passive bonus.
+  const memberCount = party.length;
+  const partySizeBonus = (memberCount - 1) * 2;
+  const gearGather = gearList.reduce((s, g) => s + (g.gather || 0), 0);
+  const extraRolls = passiveList.reduce((s, p) => s + (p.extraRolls || 0), 0);
+  const baseRolls = 4 + Math.floor(rng.int(0, 3))
+    + gearGather + partySizeBonus + extraRolls
+    + (buffs?.gatherQtyBonus || 0);
+
+  // Aggregate ore/rarity bonuses (max across members so the best gear/passive wins)
+  const oreBonus = Math.max(0, ...gearList.map(g => g.oreBonus || 0)) + (buffs?.oreBonus || 0);
+  const rarityBonus = Math.max(0, ...gearList.map(g => g.rarity || 0));
+  const orePassive = Math.max(0, ...passiveList.map(p => p.oreGather || 0));
+  const plantPassive = Math.max(0, ...passiveList.map(p => p.plantGather || 0));
+  const rarePassive = Math.max(0, ...passiveList.map(p => p.rareBoost || 0));
+
+  // Class-boost: take MAX class bonus across members (party "covers" all expertises)
+  const classIds = party.map(a => a.classId);
+  const tableRows = loc.gather.map(g => {
+    let boost = 0;
+    if (g.classBoost) {
+      for (const cid of classIds) boost = Math.max(boost, g.classBoost[cid] || 0);
+    }
+    return { mat: g.mat, w: g.w + boost, qBias: g.qBias };
+  });
+  tableRows.push({ mat: AMBIENT_DROP.mat, w: AMBIENT_DROP.w });
+
+  const totalW = tableRows.reduce((s, r) => s + r.w, 0);
+  const drops = [];
+  for (let i = 0; i < baseRolls; i++) {
+    let r = rng.next() * totalW;
+    let pick = tableRows[0];
+    for (const row of tableRows) { r -= row.w; if (r <= 0) { pick = row; break; } }
+    const matId = pick.mat;
+    const mat = MATERIALS[matId];
+    if (!mat) continue;
+    const isOre  = mat.tags?.includes("mineral");
+    const isHerb = mat.tags?.includes("plant");
+    const isWood = mat.tags?.includes("wood");
+    const isFiber = mat.tags?.includes("fiber");
+    const naturalLike = isHerb || isWood || isFiber;
+    const qBoost = isHerb ? (buffs?.herbQualityBoost || 0) : 0;
+    const q = rollQuality(pick.qBias, rng, qBoost);
+    let n = 1 + Math.floor(rng.next() * 1.5);
+    if (isOre && oreBonus > 0 && rng.chance(oreBonus)) n += 1;
+    if (mat.tags?.includes("rare") && rarityBonus > 0 && rng.chance(0.05 * rarityBonus)) n += 1;
+    if (isOre && orePassive > 0 && rng.chance(orePassive)) n += 1;
+    if (naturalLike && plantPassive > 0 && rng.chance(plantPassive)) n += 1;
+    if (mat.tags?.includes("rare") && rarePassive > 0 && rng.chance(rarePassive)) n += 1;
+    drops.push({ matId, q, n });
+  }
+  return drops;
+}
+
+export function resolvePartyDispatch(party_) {
+  const party = (party_.advIds || []).map(id => state.party.find(a => a.id === id)).filter(Boolean);
+  const loc = LOCATIONS[party_.locId];
+  if (party.length === 0 || !loc) return null;
+
+  const gearList = party.map(gearBonus);
+  const passiveList = party.map(passiveEffects);
+
+  // Encounters
+  const mobs = pickEncounters(loc);
+  const encounters = [];
+  let aggregateBuffs = { rarityBoost: 0, oreBonus: 0, herbQualityBoost: 0, gatherQtyBonus: 0 };
+  let outcome = "safe";
+  const injuredIds = new Set();
+  for (const mobId of mobs) {
+    const stillStanding = party.filter(a => a.hp > 0 && !injuredIds.has(a.id));
+    if (stillStanding.length === 0) break;
+    const enc = runPartyEncounter(stillStanding, mobId, rng);
+    encounters.push({ mobId, ...enc });
+    aggregateBuffs.rarityBoost += enc.buffs.rarityBoost || 0;
+    aggregateBuffs.oreBonus    += enc.buffs.oreBonus || 0;
+    aggregateBuffs.herbQualityBoost += enc.buffs.herbQualityBoost || 0;
+    aggregateBuffs.gatherQtyBonus   += enc.buffs.gatherQtyBonus || 0;
+    for (const id of (enc.injured || [])) injuredIds.add(id);
+    if (enc.result === "injured") { outcome = "injured"; break; }
+    if (enc.result === "flee")    { outcome = "flee"; }
+    for (const matId of enc.drops || []) addMat(matId, "norm", 1);
+  }
+
+  // Gather
+  let drops = [];
+  if (outcome !== "injured") {
+    drops = gatherForParty(loc, party, gearList, aggregateBuffs, passiveList);
+    for (const d of drops) addMat(d.matId, d.q, d.n);
+  }
+
+  // Update adv state
+  for (const adv of party) {
+    if (injuredIds.has(adv.id)) adv.injured = true;
+    adv.hp = Math.max(1, Math.min(adv.maxHp, adv.hp + Math.floor(adv.maxHp * 0.5)));
+    adv.busy = false;
+  }
+
+  const members = party.map(a => ({
+    advId: a.id, advName: a.name, classId: a.classId,
+    hp: a.hp, maxHp: a.maxHp, injured: !!a.injured,
+  }));
+
+  const result = {
+    partyId: party_.id, locId: party_.locId,
+    locName: loc.name,
+    members,
+    encounters,
+    drops,
+    outcome,
+  };
+
+  pushLog({
+    kind: "dispatch",
+    summary: `パーティ（${members.map(m => m.advName).join("、")}）— ${loc.name}：${outcome === "injured" ? "重傷者あり" : `素材 ${drops.reduce((s,d)=>s+d.n,0)}点`}`,
+    detail: result,
+  });
+  for (const enc of encounters) {
+    const memberNames = members.map(m => m.advName).join("、");
+    pushLog({
+      kind: "encounter",
+      summary: `${memberNames} vs ${enc.log?.[0]?.text || ""}`,
+      detail: { ...enc, locName: loc.name, partyNames: memberNames },
     });
   }
   return result;

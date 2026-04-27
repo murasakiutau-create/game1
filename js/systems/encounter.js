@@ -281,6 +281,38 @@ function castSpell(s, ctx, log) {
   }
 }
 
+// Build per-adventurer combat context (stats / buffs / weapon mult).
+function buildAdvCtx(adv) {
+  const advStats = effectiveStats(adv);
+  const gear = gearStats(adv);
+  const passive = passiveEffects(adv);
+  advStats.atk += gear.atk + (passive.atkBonus || 0);
+  advStats.def += gear.def + (passive.defBonus || 0);
+  advStats.luk += gear.luk;
+  const weaponId = (state.equippedGear[adv.id] || {}).weapon;
+  let weaponMult = 1.0;
+  if (weaponId && isBow(weaponId) && passive.bowAtkBoost > 0) weaponMult += passive.bowAtkBoost;
+  if (weaponId && isAxe(weaponId) && passive.axeAtkBoost > 0) weaponMult += passive.axeAtkBoost;
+  const buffs = {
+    atkMult: 0, atkAdd: 0, magicWard: 0,
+    mobAccDown: passive.mobAccDown || 0,
+    mobDmgDown: 0, mobStunTurns: 0,
+    guardOnce: false,
+    fleeSafe: !!passive.fleeSafe,
+    rebirth: false, pilferEnd: false,
+    rarityBoost: 0, oreBonus: 0, herbQualityBoost: 0, gatherQtyBonus: 0,
+    battleAuraTurns: 0,
+    divineWardTurns: 0, divineWardCut: 0,
+    weaponMult,
+    critRate: passive.critRate || 0,
+    magicDmgMult: passive.magicDmgMult || 1,
+    damageReduce: passive.damageReduce || 0,
+    expMult: passive.expMult || 1,
+    usedSpells: new Set(),
+  };
+  return { adv, advStats, passive, buffs, fled: false };
+}
+
 export function runEncounter(adv, mobId, rng) {
   const cls = CLASSES[adv.classId];
   const advStats = effectiveStats(adv);
@@ -434,3 +466,192 @@ export function runEncounter(adv, mobId, rng) {
 
   return { result, log, drops, buffs };
 }
+
+// ============================================================
+// Party-aware encounter — multiple adventurers vs one mob.
+// ============================================================
+
+function partySelectAction(ctx, mob, turn, rng, log) {
+  const rules = strategyFor(ctx.adv);
+  for (const r of rules) {
+    if (!ruleMatches(r, { adv: ctx.adv, turn })) continue;
+    const out = executeAction(r, {
+      adv: ctx.adv, mob, advStats: ctx.advStats, mobStats: mob, rng, buffs: ctx.buffs,
+    }, log);
+    if (out) return out;
+  }
+  // Fallback: plain attack
+  const dmg = Math.max(1, ctx.advStats.atk - mob.def);
+  mob.hp -= dmg;
+  log.push({ tag: "turn", text: `${ctx.adv.name}は様子見の一撃。${dmg} ダメージ。` });
+  return { kind: "attack", dmg };
+}
+
+function pickMobTarget(ctxs, rng) {
+  const alive = ctxs.filter(c => c.adv.hp > 0 && !c.fled);
+  if (alive.length === 0) return null;
+  // Bias toward lower HP%, with some randomness
+  const weighted = alive.map(c => ({ c, w: 1.5 - (c.adv.hp / Math.max(1, c.adv.maxHp)) }));
+  const total = weighted.reduce((s, x) => s + Math.max(0.1, x.w), 0);
+  let r = rng.next() * total;
+  for (const x of weighted) {
+    r -= Math.max(0.1, x.w);
+    if (r <= 0) return x.c;
+  }
+  return alive[0];
+}
+
+export function runPartyEncounter(party, mobId, rng) {
+  const mobDef = MONSTERS[mobId];
+  if (!mobDef) return null;
+  const mob = { ...mobDef, hp: mobDef.hp, name: mobDef.name };
+  const log = [];
+  log.push({ tag: "head", text: `${mob.name} と遭遇。` });
+  const memberNames = party.map(a => a.name).join("、");
+  log.push({ tag: "head", text: `パーティ：${memberNames}` });
+
+  // One context per adventurer, sorted by luk desc for turn order
+  const ctxs = party.map(buildAdvCtx);
+  ctxs.sort((a, b) => b.advStats.luk - a.advStats.luk);
+
+  let turn = 0;
+  let result = "win"; // win | flee | injured | win-flee | wipe
+  while (turn < 14) {
+    turn += 1;
+    if (mob.hp <= 0) break;
+
+    // Each conscious, non-fled adventurer acts in luk order
+    for (const ctx of ctxs) {
+      if (ctx.adv.hp <= 0 || ctx.fled) continue;
+      if (mob.hp <= 0) break;
+      const out = partySelectAction(ctx, mob, turn, rng, log);
+      if (out && out.kind === "flee") {
+        ctx.fled = true;
+      }
+    }
+
+    if (mob.hp <= 0) {
+      log.push({ tag: "verdict win", text: "敵を打ち倒した。" });
+      result = "win";
+      break;
+    }
+
+    // Are there any combatants left?
+    const stillFighting = ctxs.filter(c => c.adv.hp > 0 && !c.fled);
+    if (stillFighting.length === 0) {
+      const anyAlive = ctxs.some(c => c.adv.hp > 0);
+      if (anyAlive) {
+        const allFleeSafe = ctxs.every(c => c.adv.hp <= 0 || c.fled === false || c.buffs.fleeSafe);
+        result = allFleeSafe ? "win-flee" : "flee";
+        log.push({ tag: "verdict flee", text: "パーティは戦域を離脱した。" });
+      } else {
+        result = "injured";
+        log.push({ tag: "verdict injured", text: "パーティは退却を強いられた。" });
+      }
+      break;
+    }
+
+    // Mob attacks one alive non-fled member
+    const target = pickMobTarget(ctxs, rng);
+    if (!target) break;
+    if (target.buffs.mobStunTurns > 0) {
+      target.buffs.mobStunTurns -= 1;
+      log.push({ tag: "turn", text: `${mob.name}は怯んで動けない。` });
+    } else {
+      const hit = rng.next() > target.buffs.mobAccDown;
+      if (!hit) {
+        log.push({ tag: "turn", text: `${mob.name}の攻撃は ${target.adv.name} を逸れた。` });
+      } else {
+        let raw = mob.atk + rng.int(0, 2);
+        if (target.buffs.mobDmgDown) raw = Math.floor(raw * (1 - target.buffs.mobDmgDown));
+        let dmg = Math.max(1, raw - target.advStats.def);
+        if (target.buffs.guardOnce) {
+          dmg = Math.max(1, Math.floor(dmg / 2));
+          target.buffs.guardOnce = false;
+          log.push({ tag: "magic", text: `鉄壁が衝撃を受け止めた。` });
+        }
+        if (target.buffs.divineWardTurns > 0 && target.buffs.divineWardCut > 0) {
+          dmg = Math.max(1, Math.floor(dmg * (1 - target.buffs.divineWardCut)));
+          log.push({ tag: "magic", text: `聖域の祈りが衝撃を和らげた。` });
+        }
+        if (target.buffs.damageReduce > 0) {
+          dmg = Math.max(1, Math.floor(dmg * (1 - target.buffs.damageReduce)));
+        }
+        target.adv.hp -= dmg;
+        log.push({ tag: "turn", text: `${mob.name}の攻撃 → ${target.adv.name}に ${dmg} ダメージ。(${Math.max(0, target.adv.hp)}/${target.adv.maxHp})` });
+      }
+    }
+
+    // Tick buffs / handle KO + rebirth per ctx
+    for (const ctx of ctxs) {
+      if (ctx.buffs.battleAuraTurns > 0) {
+        ctx.buffs.battleAuraTurns -= 1;
+        if (ctx.buffs.battleAuraTurns === 0) {
+          ctx.buffs.atkMult = Math.max(0, ctx.buffs.atkMult - 0.30);
+          log.push({ tag: "turn", text: `${ctx.adv.name}の闘気が薄れた。` });
+        }
+      }
+      if (ctx.buffs.divineWardTurns > 0) {
+        ctx.buffs.divineWardTurns -= 1;
+        if (ctx.buffs.divineWardTurns === 0) {
+          ctx.buffs.divineWardCut = 0;
+        }
+      }
+      if (ctx.adv.hp <= 0 && !ctx.fled) {
+        if (ctx.buffs.rebirth) {
+          ctx.adv.hp = 1;
+          ctx.buffs.rebirth = false;
+          log.push({ tag: "heal", text: `『再生の種』が芽吹き、${ctx.adv.name}は立ち上がった。` });
+        } else {
+          log.push({ tag: "verdict injured", text: `${ctx.adv.name}は倒れた。` });
+        }
+      }
+    }
+  }
+
+  if (turn >= 14 && mob.hp > 0) {
+    const anyAlive = ctxs.some(c => c.adv.hp > 0);
+    if (!anyAlive) result = "injured";
+    else result = "flee";
+    log.push({ tag: "verdict flee", text: "持久戦の末、パーティは退いた。" });
+  }
+
+  // Aggregate buffs that influence post-combat gather/drops
+  const aggBuffs = {
+    rarityBoost: 0, oreBonus: 0, herbQualityBoost: 0, gatherQtyBonus: 0,
+  };
+  for (const ctx of ctxs) {
+    aggBuffs.rarityBoost += ctx.buffs.rarityBoost || 0;
+    aggBuffs.oreBonus += ctx.buffs.oreBonus || 0;
+    aggBuffs.herbQualityBoost += ctx.buffs.herbQualityBoost || 0;
+    aggBuffs.gatherQtyBonus += ctx.buffs.gatherQtyBonus || 0;
+  }
+
+  // Drops + exp
+  const drops = [];
+  if (result === "win" || result === "win-flee") {
+    for (const d of (mobDef.drops || [])) {
+      if (rng.chance(d.p + (aggBuffs.rarityBoost || 0))) drops.push(d.mat);
+    }
+    // Pilfer extra
+    if (ctxs.some(c => c.buffs.pilferEnd) && (mobDef.drops || []).length) {
+      const extra = rng.pick(mobDef.drops);
+      drops.push(extra.mat);
+      log.push({ tag: "magic", text: `掠め取り — 追加で素材を手にした。` });
+    }
+    // Exp split among participants who survived (or were knocked out by mob)
+    const participants = ctxs.filter(c => c.adv.hp > 0 || true); // include even injured (they fought)
+    const baseExp = Math.floor((mobDef.exp || 0) * 0.6); // group share
+    for (const ctx of participants) {
+      const personal = Math.max(1, Math.floor(baseExp * (ctx.buffs.expMult || 1)));
+      gainExp(ctx.adv, personal);
+      log.push({ tag: "verdict win", text: `${ctx.adv.name} 経験値 +${personal}` });
+    }
+  }
+
+  // Mark members who hit 0 HP at end of combat as injured-prone
+  const injured = ctxs.filter(c => c.adv.hp <= 0).map(c => c.adv.id);
+
+  return { result, log, drops, buffs: aggBuffs, injured };
+}
+

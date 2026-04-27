@@ -57,7 +57,7 @@ export function renderNightScene(host, { onAdvance, refresh }) {
         const code = await exportSave().catch(() => null);
         if (!code) { toast("出力に失敗しました。", { error: true }); return; }
         showSaveModal(code);
-      }, { ghost: true }),
+      }, { dark: true }),
     ),
   ), "❖"));
 
