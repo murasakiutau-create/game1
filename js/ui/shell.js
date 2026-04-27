@@ -31,18 +31,18 @@ export function renderShell(root, sceneEl, navHandlers) {
   const sceneHost = h("main", { class: "scene", id: "scene-host" }, sceneEl);
 
   const bottomTabs = h("nav", { class: "bottom-tabs", role: "navigation" },
-    bottomBtn("title",   "🏛", "タイトル", navHandlers.gotoTitle),
-    bottomBtn("logs",    "📜", "記録",     navHandlers.openLogs),
-    bottomBtn("party",   "✦",  "冒険者",   navHandlers.openParty),
-    bottomBtn("market",  "⚖",  "雇用",     navHandlers.openMarket),
+    bottomBtn("title",   "title",  "タイトル", navHandlers.gotoTitle),
+    bottomBtn("logs",    "logs",   "記録",     navHandlers.openLogs),
+    bottomBtn("party",   "party",  "冒険者",   navHandlers.openParty),
+    bottomBtn("market",  "market", "雇用",     navHandlers.openMarket),
   );
 
   root.appendChild(h("div", { class: "shell" }, hud, sceneHost, bottomTabs));
 }
 
-function bottomBtn(id, icon, label, on) {
+function bottomBtn(id, iconKey, label, on) {
   return h("button", { type: "button", onClick: on, dataset: { id } },
-    h("span", { class: "icon" }, icon),
+    h("span", { class: `icon png-mask icon-${iconKey}`, "aria-hidden": "true" }),
     h("span", null, label));
 }
 
