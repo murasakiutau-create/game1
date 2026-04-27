@@ -1,9 +1,10 @@
 // Decide which category chip icon to show for a given item or spell.
 //
 // Items (ITEMS[id].cat):
-//   weapon          → cat-weapon.png (sword)
-//   armor / trinket → cat-armor.png  (hooded coat — covers 防具・装身具)
-//   else            → cat-item.png   (potion bottle — potions, tomes)
+//   weapon  → cat-weapon.png  (sword)
+//   armor   → cat-armor.png   (hooded coat)
+//   trinket → cat-trinket.png (ring pendant)
+//   else    → cat-item.png    (potion bottle — potions, tomes)
 //
 // Spells:
 //   heal-flavored               → cat-heal.png   (cross)
@@ -14,7 +15,8 @@ import { h } from "./components.js";
 export function itemIconKind(item) {
   if (!item) return "item";
   if (item.cat === "weapon") return "weapon";
-  if (item.cat === "armor" || item.cat === "trinket") return "armor";
+  if (item.cat === "armor") return "armor";
+  if (item.cat === "trinket") return "trinket";
   return "item";
 }
 

@@ -386,7 +386,8 @@ input[type="number"], input[type="text"] {
 .card-icon.large  { width: 2.2rem; height: 2.2rem; }
 .card-icon.icon-item   { background-image: url("../assets/icons/cat-item.png"); }
 .card-icon.icon-weapon { background-image: url("../assets/icons/cat-weapon.png"); }
-.card-icon.icon-armor  { background-image: url("../assets/icons/cat-armor.png"); }
+.card-icon.icon-armor   { background-image: url("../assets/icons/cat-armor.png"); }
+.card-icon.icon-trinket { background-image: url("../assets/icons/cat-trinket.png"); }
 .card-icon.icon-heal   { background-image: url("../assets/icons/cat-heal.png"); }
 .card-icon.icon-attack { background-image: url("../assets/icons/cat-attack.png"); background-size: 100%; }
 
