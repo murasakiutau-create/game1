@@ -5,7 +5,7 @@
 import { state, repTier, removeItem, rng } from "../state.js";
 import { ITEMS, priceForItem, CATEGORY_LABELS } from "../data/recipes.js";
 import { CUSTOMER_TYPES, POOL_BY_TIER, CUSTOMERS_PER_DAY_BY_TIER } from "../data/customers.js";
-import { QUALITY_LABEL } from "../data/materials.js";
+import { QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
 import { pushLog } from "./log.js";
 
 // Place an item from inventory onto the shelf with a posted price.
@@ -65,13 +65,19 @@ export function runShopSimulation() {
   for (let i = 0; i < visits; i++) {
     const cust = pickCustomerType(tierIdx);
     const wantCat = pickWantCategory(cust);
-    const minQs = cust.quality;
+    // cust.quality lists the qualities the customer is comfortable with —
+    // we read its lowest entry as their minimum acceptable quality. They will
+    // buy any quality at-or-above that minimum; the priceBias / 1.4x ceiling
+    // still gates whether they can actually afford a fancier item.
+    const minQ = (cust.quality && cust.quality[0]) || "norm";
+    const minIdx = QUALITY_LEVELS.indexOf(minQ);
 
     // Find shelf entries matching cat + acceptable quality, sorted by askPrice
     const matches = state.shelf
       .filter(s => {
         const item = ITEMS[s.itemId];
-        return item && item.cat === wantCat && minQs.includes(s.quality) && s.count > 0;
+        if (!item || item.cat !== wantCat || s.count <= 0) return false;
+        return QUALITY_LEVELS.indexOf(s.quality) >= minIdx;
       })
       .sort((a, b) => a.askPrice - b.askPrice);
 
