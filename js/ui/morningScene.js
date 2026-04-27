@@ -4,7 +4,6 @@ import { h, clear, btn, panel, modal, toast, tabs, confirmModal } from "./compon
 import { state, repTier, generateAdventurer, rng, syncRng,
          PARTY_MAX, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
 import { openReturnModal } from "./returnModal.js";
-import { RANKS } from "../data/ranks.js";
 import { CLASSES } from "../data/adventurers.js";
 import { RANKS } from "../data/ranks.js";
 import { LOCATIONS, LOCATION_ORDER } from "../data/locations.js";
