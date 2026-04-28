@@ -11,12 +11,18 @@ import { CLASS_ORDER } from "../data/adventurers.js";
 export function refreshMarket() {
   const tier = repTier().index;
   const candidates = [];
+  const usedNames = new Set();
   // 3-5 candidates depending on rep tier
   const n = 3 + (tier >= 1 ? 1 : 0) + (tier >= 2 ? 1 : 0);
   for (let i = 0; i < n; i++) {
-    const rankPick = pickRank(tier);
-    const classPick = rng.pick(CLASS_ORDER);
-    const adv = generateAdventurer(classPick, rankPick, rng);
+    let adv = generateAdventurer(rng.pick(CLASS_ORDER), pickRank(tier), rng);
+    // Re-roll on name collision so all candidates are distinct people.
+    let attempts = 0;
+    while (usedNames.has(adv.name) && attempts < 16) {
+      adv = generateAdventurer(rng.pick(CLASS_ORDER), pickRank(tier), rng);
+      attempts++;
+    }
+    usedNames.add(adv.name);
     candidates.push(adv);
   }
   state.market = candidates;
@@ -64,11 +70,15 @@ export function advancePhase(opts = {}) {
   if (state.phase === "morning") {
     // Charge wages for everyone being sent today, then move parties from
     // "pending" to "out". They will return next morning.
+    const dispatchedToday = [];
     for (const p of state.pendingDispatch) {
       if (!p.advIds || p.advIds.length === 0) continue;
       payWagesForParty(p.advIds);
       state.outOnDispatch.push(p);
+      dispatchedToday.push({ locId: p.locId, advIds: [...p.advIds] });
     }
+    // Remember today's roster so the player can redo it tomorrow with one tap.
+    if (dispatchedToday.length > 0) state.lastDispatch = dispatchedToday;
     state.pendingDispatch = [];
     state.phase = "day";
     return;
@@ -95,20 +105,6 @@ export function advancePhase(opts = {}) {
     state.bookkeeping = { soldToday: 0, earnedToday: 0, customerLogToday: [] };
     state.researchedToday = 0;
 
-    // Heal advs who STAYED home (rest day)
-    const awayIds = new Set();
-    for (const p of state.outOnDispatch) for (const id of p.advIds || []) awayIds.add(id);
-    for (const adv of state.party) {
-      if (awayIds.has(adv.id)) continue; // resolution will adjust their HP
-      if (adv.injured) {
-        adv.injured = false;
-        adv.hp = Math.max(adv.hp, Math.floor(adv.maxHp * 0.6));
-        pushLog({ kind: "system", advId: adv.id, summary: `${adv.name}は傷を癒し、再出勤可能。` });
-      } else {
-        adv.hp = Math.min(adv.maxHp, adv.hp + Math.floor(adv.maxHp * 0.4));
-      }
-    }
-
     // Resolve parties that were out — fill dispatchResults for the morning recap
     state.dispatchResults = [];
     for (const p of state.outOnDispatch) {
@@ -117,6 +113,13 @@ export function advancePhase(opts = {}) {
       if (r) state.dispatchResults.push(r);
     }
     state.outOnDispatch = [];
+
+    // Full overnight recovery for everyone — even adventurers who were
+    // knocked unconscious during a dispatch are nursed back by morning.
+    for (const adv of state.party) {
+      adv.injured = false;
+      adv.hp = adv.maxHp;
+    }
 
     refreshMarket();
     return;

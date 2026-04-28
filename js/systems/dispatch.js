@@ -264,14 +264,16 @@ export function resolvePartyDispatch(party_) {
   const gearList = party.map(gearBonus);
   const passiveList = party.map(passiveEffects);
 
-  // Encounters
+  // Encounters — collect drops on the side; final inventory deposit happens
+  // after we know the outcome so we can scale by the survival multiplier.
   const mobs = pickEncounters(loc);
   const encounters = [];
+  const pendingMobDrops = []; // [matId, ...]
   let aggregateBuffs = { rarityBoost: 0, oreBonus: 0, herbQualityBoost: 0, gatherQtyBonus: 0 };
   let outcome = "safe";
-  const injuredIds = new Set();
+  const downedIds = new Set();
   for (const mobId of mobs) {
-    const stillStanding = party.filter(a => a.hp > 0 && !injuredIds.has(a.id));
+    const stillStanding = party.filter(a => a.hp > 0 && !downedIds.has(a.id));
     if (stillStanding.length === 0) break;
     const enc = runPartyEncounter(stillStanding, mobId, rng);
     encounters.push({ mobId, ...enc });
@@ -279,24 +281,34 @@ export function resolvePartyDispatch(party_) {
     aggregateBuffs.oreBonus    += enc.buffs.oreBonus || 0;
     aggregateBuffs.herbQualityBoost += enc.buffs.herbQualityBoost || 0;
     aggregateBuffs.gatherQtyBonus   += enc.buffs.gatherQtyBonus || 0;
-    for (const id of (enc.injured || [])) injuredIds.add(id);
+    for (const id of (enc.injured || [])) downedIds.add(id);
+    for (const matId of enc.drops || []) pendingMobDrops.push(matId);
     if (enc.result === "injured") { outcome = "injured"; break; }
     if (enc.result === "flee")    { outcome = "flee"; }
-    for (const matId of enc.drops || []) addMat(matId, "norm", 1);
   }
 
-  // Gather
-  let drops = [];
-  if (outcome !== "injured") {
-    drops = gatherForParty(loc, party, gearList, aggregateBuffs, passiveList);
-    for (const d of drops) addMat(d.matId, d.q, d.n);
+  // Gather — even on a wipe the party still scrapes back what they can.
+  let gatherDrops = gatherForParty(loc, party, gearList, aggregateBuffs, passiveList);
+
+  // Apply outcome multiplier: safe = 1.0, flee = 0.7, injured = 0.5.
+  const mult = outcome === "injured" ? 0.5 : outcome === "flee" ? 0.7 : 1.0;
+  const drops = [];
+  for (const d of gatherDrops) {
+    const scaled = Math.floor(d.n * mult);
+    if (scaled > 0) drops.push({ matId: d.matId, q: d.q, n: scaled });
+  }
+  for (const d of drops) addMat(d.matId, d.q, d.n);
+  // Mob drops scale too — half/70% of one drop rounds to 0/1, so we use chance.
+  for (const matId of pendingMobDrops) {
+    if (mult >= 1 || rng.chance(mult)) addMat(matId, "norm", 1);
   }
 
-  // Update adv state
+  // Update adv state — everyone returns home, no permadeath, no injury flag.
+  // HP is left at whatever combat ended at; the morning recovery pass restores
+  // them to full so the player isn't penalized for a bad run.
   for (const adv of party) {
-    if (injuredIds.has(adv.id)) adv.injured = true;
-    adv.hp = Math.max(1, Math.min(adv.maxHp, adv.hp + Math.floor(adv.maxHp * 0.5)));
     adv.busy = false;
+    adv.injured = false;
   }
 
   const members = party.map(a => ({
@@ -313,9 +325,13 @@ export function resolvePartyDispatch(party_) {
     outcome,
   };
 
+  const totalDrops = drops.reduce((s, d) => s + d.n, 0);
+  const tail = outcome === "injured" ? `敗走（持ち帰り半減）／素材 ${totalDrops}点`
+             : outcome === "flee"    ? `撤退（持ち帰り 7 割）／素材 ${totalDrops}点`
+             : `素材 ${totalDrops}点`;
   pushLog({
     kind: "dispatch",
-    summary: `パーティ（${members.map(m => m.advName).join("、")}）— ${loc.name}：${outcome === "injured" ? "重傷者あり" : `素材 ${drops.reduce((s,d)=>s+d.n,0)}点`}`,
+    summary: `パーティ（${members.map(m => m.advName).join("、")}）— ${loc.name}：${tail}`,
     detail: result,
   });
   for (const enc of encounters) {

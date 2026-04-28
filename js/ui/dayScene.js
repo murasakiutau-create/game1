@@ -53,6 +53,8 @@ function renderCraftTab(refresh) {
       ),
       h("p", { class: "muted" }, item.blurb || ""),
       h("div", { class: "muted" },
+        `相場 ${priceForItem(item.id, "poor")}〜${priceForItem(item.id, "fine")} G（品質次第）`),
+      h("div", { class: "muted" },
         h("div", null, "必要素材："),
         h("ul", null,
           ...r.inputs.map(i => h("li", null, `${MATERIALS[i.mat]?.name || i.mat} ×${i.n}`,

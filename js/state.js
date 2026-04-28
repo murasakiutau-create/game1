@@ -43,6 +43,7 @@ export const state = {
   pendingDispatch: [],  // [{ id, locId, advIds:[...] }] — parties planned for today
   outOnDispatch: [],    // [{ id, locId, advIds:[...] }] — parties currently away (return next morning)
   dispatchResults: [],  // populated next morning (per-party)
+  lastDispatch: [],     // snapshot of yesterday's dispatch (advIds + locId), for "redo last party"
   recipes: {},          // recipeId -> { unlocked, points }
   strategies: {},       // advId -> { preset: "standard", custom: [...] }
   logs: [],             // newest-first; capped to ~30 days
@@ -253,6 +254,7 @@ export function newGame() {
   state.pendingDispatch = [];
   state.outOnDispatch = [];
   state.dispatchResults = [];
+  state.lastDispatch = [];
   state.recipes = {};
   ensureRecipeMap();
   state.strategies = {};
@@ -290,6 +292,8 @@ export function loadFromObject(obj) {
   ensureRecipeMap();
   // Migration: introduced state.outOnDispatch
   if (!Array.isArray(state.outOnDispatch)) state.outOnDispatch = [];
+  // Migration: introduced state.lastDispatch (redo-last-party feature)
+  if (!Array.isArray(state.lastDispatch)) state.lastDispatch = [];
 }
 
 export function snapshot() {

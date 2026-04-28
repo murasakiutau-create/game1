@@ -51,12 +51,37 @@ function pickWantCategory(cust) {
   return entries[0][0];
 }
 
+// Customer-count caps so visits don't blow up unboundedly with a huge shelf.
+const VISIT_CAP_BY_TIER = [16, 24, 32, 40];
+
+function shelfCount() {
+  return (state.shelf || []).reduce((s, x) => s + (x.count || 0), 0);
+}
+
+function findCategoryMatches(cat, minIdx) {
+  return state.shelf
+    .filter(s => {
+      const item = ITEMS[s.itemId];
+      if (!item || item.cat !== cat || s.count <= 0) return false;
+      return QUALITY_LEVELS.indexOf(s.quality) >= minIdx;
+    })
+    .sort((a, b) => a.askPrice - b.askPrice);
+}
+
 export function runShopSimulation() {
   const tier = repTier();
   const tierIdx = tier.index;
-  const totalCust = CUSTOMERS_PER_DAY_BY_TIER[tierIdx] || 4;
-  // small jitter
-  const visits = totalCust + rng.int(-1, 1);
+  const baseCust = CUSTOMERS_PER_DAY_BY_TIER[tierIdx] || 4;
+  // Scale visits with shelf size: aim to clear ~70% of stock when the shelf
+  // is well-supplied, but never go below the base tier customer count.
+  const stock = shelfCount();
+  const targetSales = Math.ceil(stock * 0.7);
+  const wantedVisits = Math.ceil(targetSales / 0.85); // assume ~85% of visitors buy
+  const visitCap = VISIT_CAP_BY_TIER[tierIdx] || 40;
+  let visits = Math.max(baseCust, wantedVisits);
+  visits = Math.min(visits, visitCap);
+  visits += rng.int(-1, 1); // small jitter
+  if (visits < 1) visits = 1;
 
   let earnings = 0;
   let sales = 0;
@@ -65,21 +90,27 @@ export function runShopSimulation() {
   for (let i = 0; i < visits; i++) {
     const cust = pickCustomerType(tierIdx);
     const wantCat = pickWantCategory(cust);
-    // cust.quality lists the qualities the customer is comfortable with —
-    // we read its lowest entry as their minimum acceptable quality. They will
-    // buy any quality at-or-above that minimum; the priceBias / 1.4x ceiling
-    // still gates whether they can actually afford a fancier item.
     const minQ = (cust.quality && cust.quality[0]) || "norm";
     const minIdx = QUALITY_LEVELS.indexOf(minQ);
 
-    // Find shelf entries matching cat + acceptable quality, sorted by askPrice
-    const matches = state.shelf
-      .filter(s => {
-        const item = ITEMS[s.itemId];
-        if (!item || item.cat !== wantCat || s.count <= 0) return false;
-        return QUALITY_LEVELS.indexOf(s.quality) >= minIdx;
-      })
-      .sort((a, b) => a.askPrice - b.askPrice);
+    let matches = findCategoryMatches(wantCat, minIdx);
+
+    // If the preferred category isn't on the shelf, give the customer a 60%
+    // chance to wander over to another category they're interested in. They
+    // pick from `wants` weights, skipping the one they already missed.
+    if (matches.length === 0 && rng.chance(0.6)) {
+      const altEntries = Object.entries(cust.wants).filter(([c]) => c !== wantCat);
+      const totalW = altEntries.reduce((s, [, w]) => s + w, 0);
+      if (totalW > 0) {
+        let r = rng.next() * totalW;
+        let altCat = altEntries[0][0];
+        for (const [c, w] of altEntries) {
+          r -= w;
+          if (r <= 0) { altCat = c; break; }
+        }
+        matches = findCategoryMatches(altCat, minIdx);
+      }
+    }
 
     if (matches.length === 0) {
       events.push({ type: "miss", cust: cust.name, want: CATEGORY_LABELS[wantCat] });

@@ -86,6 +86,10 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
   }
   partiesBody.appendChild(btn("＋ 新しいパーティを編成", () => openPartyFormation(refresh),
     { primary: true, block: true }));
+  if ((state.lastDispatch || []).length > 0) {
+    partiesBody.appendChild(btn("⟲ 前回と同じ編成で派遣", () => redoLastDispatch(refresh),
+      { dark: true, block: true }));
+  }
   phase.appendChild(panel(`派遣パーティ（${state.pendingDispatch.length}組）`, partiesBody, "✦"));
 
   // Party panel — roster overview
@@ -643,6 +647,42 @@ function renderDispatchTab(adv, onDispatched) {
   }
   wrap.appendChild(grid);
   return wrap;
+}
+
+// ---- Redo last dispatch ----
+
+function redoLastDispatch(refresh) {
+  const snapshots = state.lastDispatch || [];
+  if (snapshots.length === 0) { toast("前回の派遣記録がありません。", { error: true }); return; }
+  let restored = 0;
+  let dropped = 0;
+  for (const snap of snapshots) {
+    const ids = [];
+    for (const id of (snap.advIds || [])) {
+      const adv = state.party.find(a => a.id === id);
+      if (!adv) { dropped++; continue; } // adventurer no longer on the roster
+      if (adv.injured) { dropped++; continue; }
+      if (partyForAdv(id)) { dropped++; continue; } // already in another pending party today
+      ids.push(id);
+    }
+    if (ids.length === 0) continue;
+    state.pendingDispatch.push({ id: newPartyId(), locId: snap.locId, advIds: ids });
+    for (const id of ids) {
+      const adv = state.party.find(a => a.id === id);
+      if (adv) adv.busy = true;
+    }
+    restored += ids.length;
+  }
+  if (restored === 0) {
+    toast("前回のメンバーは全員参加できませんでした。新規編成してください。", { error: true, ms: 3500 });
+    return;
+  }
+  if (dropped > 0) {
+    toast(`${restored}名で再編成しました（${dropped}名は除外）。`, { ms: 3000 });
+  } else {
+    toast(`前回と同じ編成（${restored}名）で派遣準備しました。`);
+  }
+  refresh();
 }
 
 // ---- New party formation wizard ----
