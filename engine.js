@@ -32,17 +32,14 @@ function changeKarma(delta) {
   updateUI();
 }
 function changeSan(delta) {
-  G.san = Math.max(0, Math.min(100, G.san+delta));
-  if(G.san<=20) addLog('⚠️ 精神が限界に近い……幻覚が見える。','warn');
-  updateUI();
+  // SAN値システムは無効化（一旦排除）。引数は無視。
 }
 function changeLuck(delta) {
   G.luck = Math.max(0, Math.min(100, G.luck+delta));
   updateUI();
 }
 function changeCleanliness(delta) {
-  G.cleanliness = Math.max(0, Math.min(100, G.cleanliness+delta));
-  updateUI();
+  // 清潔度システムは無効化（一旦排除）。引数は無視。
 }
 function changeHp(delta) {
   G.hp = Math.max(0, Math.min(G.maxHp, G.hp+delta));
@@ -63,14 +60,7 @@ function gainSkillExp(name, exp) {
 // ── ターン進行 ────────────────────────────────────────────────
 function advanceTurn(n=1) {
   G.turn+=n;
-  // 空腹
-  G.hunger=Math.max(0,G.hunger-n*2);
-  if(G.hunger<=0) changeHp(-2*n);
-  // 清潔度自然低下
-  G.cleanliness=Math.max(0,G.cleanliness-n);
-  // トイレ切迫
-  G.toiletUrgency=Math.min(100,G.toiletUrgency+n*3);
-  if(G.toiletUrgency>=100){ doToiletAccident(); }
+  // 空腹・清潔度・トイレシステムは無効化（一旦排除）
   // 住居費（50ターンごと）
   if(G.turn%50===0){
     const cost={inn:20,rental:30,apartment:40,own:0,built:0,homeless:0}[G.housing]||0;
@@ -104,10 +94,7 @@ function advanceTurn(n=1) {
 }
 
 function doToiletAccident() {
-  G.toiletUrgency=0;
-  changeCleanliness(-20);
-  changeSan(-10);
-  addLog('💦 我慢の限界を超えてしまった……衣服が汚れた。周囲の視線が刺さる。','bad');
+  // 無効化（一旦排除）
 }
 
 function checkCorpseDecay() {
@@ -795,16 +782,6 @@ function buildSelfCommands() {
     {label:'手袋を脱ぐ',       color:'dim',    locs:'any', fn:()=>doUndress('hands')},
     {label:'物乞いをする',     color:'crime',  locs:['street','market'],          fn:()=>doBeg()},
     {label:'全裸で歩く',       color:'crime',  locs:['street','market','alley'], fn:()=>doWalkNaked()},
-    // トイレ
-    {label:'公衆トイレに行く', color:'dim',    locs:['street','market','tavern','guild'], fn:()=>doToiletPublic()},
-    {label:'路地裏で用を足す', color:'crime',  locs:['alley'],                            fn:()=>doToiletOutdoorHidden()},
-    {label:'街中で堂々と用を足す',color:'crime',locs:['street','market'],                 fn:()=>doToiletOutdoorPublic()},
-    // 風呂・清潔
-    {label:'自宅でお風呂',     color:'dim',    locs:['inn'],   fn:()=>doBathHome()},
-    {label:'宿屋のシャワー',   color:'dim',    locs:['inn'],   fn:()=>doShowerInn()},
-    {label:'野外で入浴する',   color:'crime',  locs:['forest'],fn:()=>doBathOutdoor()},
-    {label:'噴水で沐浴する',   color:'crime',  locs:['street'],fn:()=>doWashFountain()},
-    {label:'ウェットシートで拭く',color:'dim', locs:'any',     fn:()=>doWipeWetSheet()},
     // 掘削・花壇（街中）
     {label:'石畳を掘る',       color:'skill',  locs:['street'],                fn:()=>doDigStreet()},
     {label:'花壇を掘り返す',   color:'crime',  locs:['street','church'],       fn:()=>doDigFlowerBed()},
@@ -866,16 +843,15 @@ function buildSelfCommands() {
 function doEatBread() {
   if(!hasItem('bread')){ addLog('パンがない。','bad'); return; }
   removeItem('bread');
-  G.hunger=Math.min(100,G.hunger+30);
-  addLog('🍞 パンを食べた。空腹が和らいだ。','item');
+  changeHp(5);
+  addLog('🍞 パンを食べた。少し元気が出た。（HP+5）','item');
   advanceTurn();
 }
 function doDrinkAle() {
   if(!hasItem('ale')){ addLog('エールがない。','bad'); return; }
   removeItem('ale');
-  G.hunger=Math.min(100,G.hunger+10);
-  changeSan(5);
-  addLog('🍺 エールを飲んだ。ほろ酔いになった。','item');
+  changeHp(3);
+  addLog('🍺 エールを飲んだ。ほろ酔いになった。（HP+3）','item');
   advanceTurn();
 }
 function doSelfHarm() {

@@ -20,12 +20,6 @@ function updateUI() {
   // HP
   const hpEl=document.getElementById('stat-hp');
   if(hpEl) hpEl.textContent=`${G.hp}/${G.maxHp}`;
-  // SAN
-  const sanEl=document.getElementById('stat-san');
-  if(sanEl){
-    sanEl.textContent=G.san;
-    sanEl.style.color=G.san<=20?'#ff4444':G.san<=40?'#ffaa00':'';
-  }
   // GOLD
   const goldEl=document.getElementById('stat-gold');
   if(goldEl) goldEl.textContent=`${G.gold}G`;
@@ -35,24 +29,6 @@ function updateUI() {
   // LUCK
   const luckEl=document.getElementById('stat-luck');
   if(luckEl) luckEl.textContent=G.luck.toFixed(1);
-  // 清潔度
-  const cleanEl=document.getElementById('stat-clean');
-  if(cleanEl){
-    cleanEl.textContent=G.cleanliness;
-    cleanEl.style.color=G.cleanliness<=20?'#ff4444':'';
-  }
-  // 空腹
-  const hungerEl=document.getElementById('stat-hunger');
-  if(hungerEl){
-    hungerEl.textContent=G.hunger;
-    hungerEl.style.color=G.hunger<=20?'#ff4444':'';
-  }
-  // トイレ
-  const toiletEl=document.getElementById('stat-toilet');
-  if(toiletEl){
-    toiletEl.textContent=G.toiletUrgency;
-    toiletEl.style.color=G.toiletUrgency>=80?'#ff4444':G.toiletUrgency>=60?'#ffaa00':'';
-  }
   // カルマ（ヘッダー内）
   const karmaValEl=document.getElementById('stat-karma-val');
   if(karmaValEl){
