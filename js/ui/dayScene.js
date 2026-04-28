@@ -8,9 +8,14 @@ import { canCraft, craft, predictCraftQuality } from "../systems/crafting.js";
 import { listOnShelf, unlistFromShelf } from "../systems/shop.js";
 import {
   SHELF_TYPES_PER_SHELF,
+  HARD_MAX_SHELVES,
   shelfTypesMax,
   shelfTypesUsed,
-  maxShelvesAllowed,
+  effectiveShelves,
+  tierBaselineShelves,
+  nextShelfCost,
+  canBuyShelf,
+  buyShelf,
 } from "../systems/shopExpansion.js";
 import { itemIconKind, iconChip } from "./iconKind.js";
 
@@ -28,11 +33,13 @@ export function renderDayScene(host, { onAdvance, refresh }) {
   wrap.appendChild(tabs([
     { id: "craft", label: "調合" },
     { id: "shop", label: "店頭・棚" },
+    { id: "expand", label: "お店拡張" },
     { id: "stock", label: "在庫" },
   ], currentTab, (id) => { currentTab = id; renderDayScene(host, { onAdvance, refresh }); }));
 
   if (currentTab === "craft") wrap.appendChild(renderCraftTab(refresh));
   else if (currentTab === "shop") wrap.appendChild(renderShopTab(refresh));
+  else if (currentTab === "expand") wrap.appendChild(renderShopExpansionTab(refresh));
   else wrap.appendChild(renderStockTab());
 
   wrap.appendChild(panel("",
@@ -120,9 +127,9 @@ function renderShopTab(refresh) {
 
   // Header with shelf-capacity readout.
   const used = shelfTypesUsed();
-  const tierMaxTypes = maxShelvesAllowed() * SHELF_TYPES_PER_SHELF;
+  const cap = effectiveShelves() * SHELF_TYPES_PER_SHELF;
   wrap.appendChild(h("p", { class: "muted" },
-    `${used} / ${tierMaxTypes} 種類`));
+    `${used} / ${cap} 種類`));
 
   // Inventory items that can be listed
   const sellableItems = state.inventory.items.filter(it => {
@@ -210,6 +217,67 @@ function renderShopTab(refresh) {
   wrap.appendChild(panel("店頭の棚", shelf, "✦"));
 
   return wrap;
+}
+
+function renderShopExpansionTab(refresh) {
+  const eff = effectiveShelves();
+  const baseline = tierBaselineShelves();
+  const cost = nextShelfCost();
+  const check = canBuyShelf();
+  const atMax = eff >= HARD_MAX_SHELVES;
+  const cap = eff * SHELF_TYPES_PER_SHELF;
+  const hardCap = HARD_MAX_SHELVES * SHELF_TYPES_PER_SHELF;
+
+  const body = h("div", { class: "stack" },
+    h("p", { class: "muted" },
+      `名声段階に応じて棚は自動で増えます（現在の段階の基準：${baseline} 個 / ${baseline * SHELF_TYPES_PER_SHELF} 種類）。` +
+      `さらに金貨を払って最大 ${HARD_MAX_SHELVES} 個（${hardCap} 種類）まで拡張できます。`),
+    h("div", { class: "parchment-card" },
+      h("div", { class: "row between" },
+        h("strong", null, "現在の店"),
+        h("span", { class: "tag gold" }, `棚 ${eff} / ${HARD_MAX_SHELVES} 個`),
+      ),
+      h("div", { class: "muted" }, `陳列容量：${shelfTypesUsed()} / ${cap} 種類`),
+      h("div", { class: "muted" },
+        eff > baseline
+          ? `名声段階の基準 ${baseline} 個 +${eff - baseline} 個拡張済み`
+          : `名声段階の基準 ${baseline} 個（拡張なし）`),
+    ),
+    h("div", { class: "parchment-card" },
+      h("div", { class: "row between" },
+        h("strong", null, atMax ? "上限到達" : `棚を増設（次は ${eff + 1} 個目）`),
+        !atMax && cost != null
+          ? h("span", { class: "tag" }, `${cost.toLocaleString()} G`)
+          : null,
+      ),
+      atMax
+        ? h("p", { class: "muted" },
+            `最大 ${HARD_MAX_SHELVES} 個（${hardCap} 種類）まで拡張済みです。`)
+        : h("p", { class: "muted" },
+            `増設後の容量：${(eff + 1) * SHELF_TYPES_PER_SHELF} 種類。`),
+      h("div", { class: "row" },
+        btn(atMax
+              ? "上限到達"
+              : (cost != null && state.gold < cost ? "金貨不足" : "棚を増設する"),
+          () => {
+            const res = buyShelf();
+            if (!res.ok) {
+              toast(
+                res.reason === "max"  ? `これ以上は増設できません（上限 ${HARD_MAX_SHELVES} 個）。` :
+                res.reason === "gold" ? "金貨が足りません。" :
+                "増設できません。",
+                { error: true },
+              );
+              return;
+            }
+            toast(`棚を増設しました（${res.cost.toLocaleString()} G）。現在 ${res.shelves} 個。`);
+            refresh();
+          },
+          { primary: check.ok, ghost: !check.ok, disabled: !check.ok, sfx: "plain" }),
+      ),
+    ),
+  );
+  return panel("お店拡張", body, "❖");
 }
 
 function priceField(shelfEntry, refresh) {
