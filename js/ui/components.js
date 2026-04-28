@@ -91,17 +91,24 @@ export function toast(text, opts = {}) {
 }
 
 // Modal
+// opts.dismissible (default true) — when false, backdrop click and the
+// header ✕ are disabled; the modal can only be closed by an explicit
+// .close() (e.g. a foot button calling it).
 export function modal(content, opts = {}) {
+  const dismissible = opts.dismissible !== false;
   const back = h("div", { class: "modal-backdrop" });
   const onClose = (e) => {
     if (e && e.target !== back && !e.__force) return;
+    if (!dismissible && !(e && e.__force)) return;
     back.remove();
     if (opts.onClose) opts.onClose();
   };
   back.addEventListener("click", onClose);
   const head = opts.title ? h("div", { class: "head" },
     h("h3", null, opts.title),
-    btn("✕", () => { const ev = {}; ev.__force = true; onClose(ev); }, { ghost: true, small: true, ariaLabel: "閉じる" }),
+    dismissible
+      ? btn("✕", () => { const ev = {}; ev.__force = true; onClose(ev); }, { ghost: true, small: true, ariaLabel: "閉じる" })
+      : null,
   ) : null;
   const body = h("div", { class: "body" }, content);
   const foot = opts.foot ? h("div", { class: "foot" }, opts.foot) : null;

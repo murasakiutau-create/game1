@@ -49,6 +49,7 @@ export function openReturnModal(onClose) {
   const m = modal(body, {
     title: "帰還報告",
     foot: footer,
+    dismissible: false,   // must click 確認した — no backdrop / ✕ close
     onClose: () => {
       // Clear after viewing so the modal doesn't auto-reopen on subsequent renders.
       state.dispatchResults = [];
