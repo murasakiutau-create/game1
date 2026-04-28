@@ -166,15 +166,17 @@ function renderShopTab(refresh) {
   for (const s of state.shelf) {
     const item = ITEMS[s.itemId];
     if (!item) continue;
+    const marketPrice = priceForItem(s.itemId, s.quality);
     shelf.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[s.quality])),
         h("span", null, "棚 " + s.count),
       ),
-      h("div", { class: "row" },
-        h("label", null, "売値 "),
+      h("div", { class: "muted" }, `相場 ${marketPrice} G`),
+      h("div", { class: "row", style: { alignItems: "center", gap: "0.4rem" } },
+        h("label", null, "売値"),
         priceField(s, refresh),
-        h("span", { class: "muted" }, " G"),
+        h("span", { class: "muted" }, "G"),
       ),
       h("div", { class: "row" },
         btn("1個下げる", () => { unlistFromShelf(s.itemId, s.quality, 1); addItem(s.itemId, s.quality, 1); refresh(); }, { ghost: true, small: true }),
