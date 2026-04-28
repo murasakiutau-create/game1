@@ -292,6 +292,20 @@ function castSpell(s, ctx, log) {
       log.push({ tag: "turn", text: `風が鉱脈を示し、${mob.name} を ${dmg} 弾いた。` });
       return { kind: "magic", dmg };
     }
+    case "phantom_clone": {
+      buffs.divineWardTurns = Math.max(buffs.divineWardTurns || 0, 1);
+      buffs.divineWardCut = Math.max(buffs.divineWardCut || 0, 0.5);
+      const dmg = dealElem(rng.int(4, 9));
+      mob.hp -= dmg;
+      log.push({ tag: "magic", text: `影の分身が ${mob.name} に ${dmg} ダメージ。次の被弾を半減。` });
+      return { kind: "magic", dmg };
+    }
+    case "dragon_breath_spell": {
+      const dmg = dealElem(rng.int(15, 30));
+      mob.hp -= dmg;
+      log.push({ tag: "turn", text: `龍の息吹が ${mob.name} を焼き払った。${dmg} ダメージ。` });
+      return { kind: "magic", dmg };
+    }
     default: return { kind: "noop" };
   }
 }

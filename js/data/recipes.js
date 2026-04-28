@@ -50,6 +50,16 @@ export const ITEMS = {
   book_smoke_veil:   { id: "book_smoke_veil",   name: "頁・煙幕",      cat: "tome",  basePrice: 180, blurb: "煙の幕で目を眩ませる。", grantsSpell: "smoke_veil" },
   book_bramble_call: { id: "book_bramble_call", name: "頁・茨蔓の呼び", cat:"tome",  basePrice: 280, blurb: "蔓に語りかけ操る。", grantsSpell: "bramble_call" },
   book_prospect_wind:{ id: "book_prospect_wind",name: "頁・採掘の風",   cat:"tome",  basePrice: 220, blurb: "鉱脈を探る風の呪文。", grantsSpell: "prospect_wind" },
+
+  // ── 上位（評判解禁素材を使う高位レシピ）
+  spirit_potion:    { id: "spirit_potion",    name: "水霊の薬",       cat: "potion",  basePrice: 380,  blurb: "水精の力で深い傷を癒す。" },
+  moonlight_robe_item:{id:"moonlight_robe_item",name:"月光のローブ",   cat: "armor",   basePrice: 720,  blurb: "月光珊瑚を織り込んだ防具。", grantsEquip: "moonlight_robe" },
+  moonlight_staff_item:{id:"moonlight_staff_item",name:"月光の杖",     cat: "weapon",  basePrice: 920,  blurb: "月光石を頂に据えた魔導の杖。", grantsEquip: "moonlight_staff" },
+  starlit_amulet_item:{id:"starlit_amulet_item",name:"星辰のお守り",   cat: "trinket", basePrice: 480,  blurb: "星の欠片を埋め込んだ護符。", grantsEquip: "starlit_amulet" },
+  book_phantom_clone:{id:"book_phantom_clone",name:"頁・朧分身",       cat: "tome",    basePrice: 540,  blurb: "影に分かれて敵を惑わす技。", grantsSpell: "phantom_clone" },
+  dragon_scale_mail_item:{id:"dragon_scale_mail_item",name:"古竜の鱗鎧", cat:"armor",  basePrice: 1480, blurb: "古竜の鱗を縫い込んだ最高位の鎧。", grantsEquip: "dragon_scale_mail" },
+  dragon_elixir:    { id: "dragon_elixir",    name: "龍息のエリクサ", cat: "potion",  basePrice: 2200, blurb: "全傷癒しと一時的な無敵を授ける。" },
+  book_dragon_breath:{id:"book_dragon_breath",name:"頁・龍息",         cat: "tome",    basePrice: 980,  blurb: "龍の息吹を再現する超高位呪文。", grantsSpell: "dragon_breath_spell" },
 };
 
 export const RECIPES = {
@@ -212,6 +222,24 @@ export const RECIPES = {
                     inputs: [ { mat: "obsidian", n: 2 }, { mat: "magicite", n: 1 }, { mat: "rune_shard", n: 1 } ], research: 200 },
   book_cure_chant: { id: "book_cure_chant", name: "頁・癒しの詠唱", out: "book_cure_chant", tier: 3, unlocked: false,
                     inputs: [ { mat: "moonleaf", n: 1 }, { mat: "fragrant", n: 2 }, { mat: "spring_dew", n: 1 } ], research: 200 },
+
+  // ── 上位レシピ（中堅以降の素材で作る）
+  spirit_potion: { id: "spirit_potion", name: "水霊の薬", out: "spirit_potion", tier: 4, unlocked: false,
+                   inputs: [ { mat: "water_tear", n: 1 }, { mat: "lotus_leaf", n: 2 }, { mat: "pure_water", n: 2 } ], research: 280 },
+  moonlight_robe_item: { id: "moonlight_robe_item", name: "月光のローブ", out: "moonlight_robe_item", tier: 4, unlocked: false,
+                   inputs: [ { mat: "moon_coral", n: 2 }, { mat: "silkstrand", n: 3 }, { mat: "spirit_glass", n: 1 } ], research: 320 },
+  moonlight_staff_item: { id: "moonlight_staff_item", name: "月光の杖", out: "moonlight_staff_item", tier: 5, unlocked: false,
+                   inputs: [ { mat: "moonstone", n: 2 }, { mat: "oakwood", n: 1 }, { mat: "magicite", n: 1 } ], research: 400 },
+  starlit_amulet_item: { id: "starlit_amulet_item", name: "星辰のお守り", out: "starlit_amulet_item", tier: 5, unlocked: false,
+                   inputs: [ { mat: "star_shard", n: 1 }, { mat: "silver_ore", n: 2 }, { mat: "rune_shard", n: 1 } ], research: 360 },
+  book_phantom_clone: { id: "book_phantom_clone", name: "頁・朧分身", out: "book_phantom_clone", tier: 5, unlocked: false,
+                   inputs: [ { mat: "phantom_stone", n: 1 }, { mat: "rune_shard", n: 2 }, { mat: "obsidian", n: 1 } ], research: 380 },
+  dragon_scale_mail_item: { id: "dragon_scale_mail_item", name: "古竜の鱗鎧", out: "dragon_scale_mail_item", tier: 5, unlocked: false,
+                   inputs: [ { mat: "dragon_scale", n: 3 }, { mat: "iron_ore", n: 2 }, { mat: "spirit_glass", n: 1 } ], research: 540 },
+  dragon_elixir: { id: "dragon_elixir", name: "龍息のエリクサ", out: "dragon_elixir", tier: 5, unlocked: false,
+                   inputs: [ { mat: "dragon_breath", n: 1 }, { mat: "legend_petal", n: 1 }, { mat: "ether", n: 2 } ], research: 600 },
+  book_dragon_breath: { id: "book_dragon_breath", name: "頁・龍息", out: "book_dragon_breath", tier: 5, unlocked: false,
+                   inputs: [ { mat: "primordial_rune", n: 1 }, { mat: "dragon_breath", n: 1 }, { mat: "ancient_rune", n: 1 } ], research: 560 },
 };
 
 export const CATEGORY_LABELS = { potion: "薬", weapon: "武器", armor: "防具", trinket: "装身具", tome: "魔法書" };

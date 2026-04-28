@@ -49,6 +49,26 @@ export const MATERIALS = {
   // Special
   ancient_rune:{ id: "ancient_rune",name: "古代の符",     tags: ["magic", "ruin"],     basePrice: 80 },
   legend_petal:{ id: "legend_petal",name: "伝説の花弁",   tags: ["plant", "legend"],   basePrice: 220 },
+
+  // ── 中堅解禁：水霊の祠
+  water_tear:  { id: "water_tear",  name: "水精の涙",     tags: ["liquid", "rare"],     basePrice: 95 },
+  moon_coral:  { id: "moon_coral",  name: "月光珊瑚",     tags: ["mineral", "rare"],    basePrice: 120 },
+  lotus_leaf:  { id: "lotus_leaf",  name: "蓮の葉",       tags: ["plant", "rare"],      basePrice: 70 },
+
+  // ── 有名解禁：月影の塔
+  moonstone:   { id: "moonstone",   name: "月光石",       tags: ["mineral", "rare"],    basePrice: 160 },
+  star_shard:  { id: "star_shard",  name: "星の欠片",     tags: ["magic", "rare"],      basePrice: 200 },
+  phantom_stone:{id:"phantom_stone",name: "朧霊石",       tags: ["magic", "rare"],      basePrice: 230 },
+
+  // ── 伝説解禁：古竜の谷
+  dragon_scale:{ id: "dragon_scale",name: "古竜の鱗",     tags: ["monster", "legend"],  basePrice: 380 },
+  dragon_breath:{id:"dragon_breath",name: "龍息晶",       tags: ["magic", "legend"],    basePrice: 420 },
+  primordial_rune:{id:"primordial_rune",name:"太古の符", tags: ["magic", "legend"],    basePrice: 450 },
+
+  // ── ボス固有
+  swamp_lord_pearl:{id:"swamp_lord_pearl",name:"沼の主の真珠", tags: ["monster","legend"], basePrice: 600 },
+  phantom_essence:{id:"phantom_essence",name: "幻影の精髄", tags: ["magic","legend"],  basePrice: 700 },
+  elder_dragon_horn:{id:"elder_dragon_horn",name:"古竜の角", tags: ["monster","legend"], basePrice: 1200 },
 };
 
 export function priceFor(materialId, quality) {

@@ -1,7 +1,7 @@
 // Dispatch resolution: gather rolls + 0..3 encounters + log assembly.
 // Result is stored on state.dispatchResults until the evening scene presents it.
 
-import { state, addMat, rng } from "../state.js";
+import { state, addMat, rng, repTier } from "../state.js";
 import { CLASSES, expForLevel } from "../data/adventurers.js";
 import { LOCATIONS, AMBIENT_DROP, DEFAULT_Q_BIAS } from "../data/locations.js";
 import { MATERIALS, QUALITY_LEVELS } from "../data/materials.js";
@@ -109,19 +109,21 @@ function gearBonus(adv) {
 }
 
 function pickEncounters(loc) {
-  const totalW = loc.encounters.reduce((s, e) => s + e.w, 0);
+  // Boss-gated entries (e.g. {mob: "swamp_lord", w: 12, bossGate: 2}) only
+  // become eligible once the player's reputation tier reaches bossGate.
+  const tierIdx = repTier().index;
+  const eligible = loc.encounters.filter(e => (e.bossGate || 0) <= tierIdx);
+  const totalW = eligible.reduce((s, e) => s + e.w, 0);
   const picks = [];
-  // 0 to (danger-1) base + chance roll for an extra
   let attempts = 1 + Math.floor(loc.danger / 2);
   for (let i = 0; i < attempts; i++) {
     if (!rng.chance(loc.encounterRate)) continue;
     let r = rng.next() * totalW;
-    for (const e of loc.encounters) {
+    for (const e of eligible) {
       r -= e.w;
       if (r <= 0) { picks.push(e.mob); break; }
     }
   }
-  // Cap at 3
   return picks.slice(0, 3);
 }
 

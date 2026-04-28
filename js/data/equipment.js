@@ -30,6 +30,12 @@ export const EQUIPMENT = {
   herbalists_pouch:{ id: "herbalists_pouch",name: "薬師の小袋",      cat: "trinket", luk: 1, mat: 1.0, gather: 1, qty: 1, rarity: 0 },
   miners_lamp:     { id: "miners_lamp",     name: "坑夫の角灯",      cat: "trinket", luk: 0, mat: 1.0, gather: 1, qty: 1, rarity: 0, oreBonus: 0.15 },
   crystal_pendant: { id: "crystal_pendant", name: "結晶の首飾り",    cat: "trinket", luk: 1, mat: 1.05, gather: 0, qty: 0, rarity: 1 },
+
+  // ── 上位（評判解禁素材で作る）
+  moonlight_robe:  { id: "moonlight_robe",  name: "月光のローブ",    cat: "armor:light", def: 8,  mat: 1.10, gather: 0, qty: 0, rarity: 2 },
+  moonlight_staff: { id: "moonlight_staff", name: "月光の杖",        cat: "weapon:staff",atk: 8,  mat: 1.20, gather: 0, qty: 0, rarity: 2 },
+  starlit_amulet:  { id: "starlit_amulet",  name: "星辰のお守り",    cat: "trinket",     luk: 4,  mat: 1.10, gather: 0, qty: 0, rarity: 2 },
+  dragon_scale_mail:{ id: "dragon_scale_mail",name: "古竜の鱗鎧",    cat: "armor:heavy", def: 14, mat: 1.10, gather: 0, qty: 0, rarity: 3 },
 };
 
 // Mapping label for category display.

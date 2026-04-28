@@ -758,6 +758,7 @@ function renderDispatchTab(adv, onDispatched) {
   const grid = h("div", { class: "card-grid" });
   for (const lid of LOCATION_ORDER) {
     const loc = LOCATIONS[lid];
+    if ((loc.unlockTier || 0) > repTier().index) continue;
     grid.appendChild(h("div", { class: "parchment-card selectable" },
       h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
       h("p", { class: "muted" }, loc.blurb),
@@ -826,6 +827,7 @@ export function openPartyFormation(refresh) {
       const grid = h("div", { class: "card-grid" });
       for (const lid of LOCATION_ORDER) {
         const loc = LOCATIONS[lid];
+        if ((loc.unlockTier || 0) > repTier().index) continue;
         grid.appendChild(h("div", { class: "parchment-card selectable" },
           h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
           h("p", { class: "muted" }, loc.blurb),
@@ -936,6 +938,7 @@ function openLocationPicker(pt, refresh) {
   const grid = h("div", { class: "card-grid" });
   for (const lid of LOCATION_ORDER) {
     const loc = LOCATIONS[lid];
+    if ((loc.unlockTier || 0) > repTier().index && lid !== pt.locId) continue;
     const isCurrent = lid === pt.locId;
     grid.appendChild(h("div", { class: "parchment-card selectable" + (isCurrent ? " selected" : "") },
       h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),

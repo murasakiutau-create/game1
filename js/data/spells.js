@@ -38,6 +38,10 @@ export const SPELLS = {
 
   // Universal-ish / utility
   prospect_wind:{ id: "prospect_wind",name: "採掘の風",   school: "elemental", element: "wind",  power: 4,    mp: 2, blurb: "風で2〜6ダメージ＋鉱石採取+20%。" },
+
+  // ── 上位（評判段階で解禁レシピが追加される）
+  phantom_clone:{ id: "phantom_clone",name: "朧分身",     school: "stealth",   element: "dark",  power: 0.5,  mp: 5, blurb: "影の分身。次1ターンの被弾を50%軽減＋反撃。" },
+  dragon_breath_spell:{id:"dragon_breath_spell",name:"龍息", school: "elemental", element: "fire", power: 22, mp: 6, blurb: "龍の息吹で15〜30ダメージ。火属性最高位。" },
 };
 
 export function spellsAllowedForClass(cls) {

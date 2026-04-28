@@ -124,9 +124,90 @@ export const LOCATIONS = {
       { mob: "wyvern_kit",  w: 15 },
     ],
   },
+
+  // ── 中堅で解禁
+  spirit_shrine: {
+    id: "spirit_shrine",
+    name: "水霊の祠",
+    blurb: "水精と月光珊瑚が眠る霊地。水霊と月光殻の蟹が棲む。",
+    danger: 3,
+    encounterRate: 0.8,
+    unlockTier: 1,
+    classAffinity: { herbalist: 1.20, mage: 1.15 },
+    gather: [
+      { mat: "water_tear",   w: 25, classBoost: { herbalist: 18, mage: 12 }, qBias: { good: 3, fine: 1 } },
+      { mat: "moon_coral",   w: 18, classBoost: { thief: 10 } },
+      { mat: "lotus_leaf",   w: 30, classBoost: { herbalist: 16 } },
+      { mat: "spring_dew",   w: 35 },
+      { mat: "ether",        w: 20 },
+      { mat: "rune_shard",   w: 18 },
+      { mat: "moonleaf",     w: 12, qBias: { good: 3, fine: 1 } },
+    ],
+    encounters: [
+      { mob: "water_sprite",   w: 38 },
+      { mob: "moonshell_crab", w: 32 },
+      { mob: "marsh_serpent",  w: 18 },
+      { mob: "swamp_lord",     w: 12, bossGate: 2 }, // 評判 有名(2)+ で出現可能
+    ],
+  },
+
+  // ── 有名で解禁
+  moon_tower: {
+    id: "moon_tower",
+    name: "月影の塔",
+    blurb: "幻影と星の欠片が舞う古塔。亡霊と星詠みの蛇が回廊を巡る。",
+    danger: 4,
+    encounterRate: 0.9,
+    unlockTier: 2,
+    classAffinity: { mage: 1.30, thief: 1.10 },
+    gather: [
+      { mat: "moonstone",      w: 22, classBoost: { mage: 14 }, qBias: { good: 2, fine: 1 } },
+      { mat: "star_shard",     w: 15, classBoost: { mage: 18 } },
+      { mat: "phantom_stone",  w: 12, classBoost: { mage: 18 } },
+      { mat: "ancient_rune",   w: 18 },
+      { mat: "spirit_glass",   w: 12 },
+      { mat: "magicite",       w: 22 },
+      { mat: "ether",          w: 14 },
+      { mat: "silver_ore",     w: 14 },
+    ],
+    encounters: [
+      { mob: "tower_specter", w: 35 },
+      { mob: "star_serpent",  w: 30 },
+      { mob: "wraith",        w: 20 },
+      { mob: "rune_imp",      w: 15 },
+      { mob: "phantom_warden",w: 8, bossGate: 3 }, // 伝説 で出現可能
+    ],
+  },
+
+  // ── 伝説で解禁
+  dragon_vale: {
+    id: "dragon_vale",
+    name: "古竜の谷",
+    blurb: "若竜と符竜が舞い、太古の符が岩肌に焼き付く伝説の地。",
+    danger: 5,
+    encounterRate: 0.95,
+    unlockTier: 3,
+    classAffinity: { warrior: 1.15, mage: 1.20 },
+    gather: [
+      { mat: "dragon_scale",     w: 18, qBias: { good: 3, fine: 2 } },
+      { mat: "dragon_breath",    w: 12, qBias: { good: 2, fine: 2 } },
+      { mat: "primordial_rune",  w: 14 },
+      { mat: "ancient_rune",     w: 18 },
+      { mat: "magicite",         w: 18 },
+      { mat: "ether",            w: 14 },
+      { mat: "ice_scale",        w: 12 },
+      { mat: "legend_petal",     w: 8,  qBias: { fine: 4 } },
+    ],
+    encounters: [
+      { mob: "young_dragon", w: 35 },
+      { mob: "rune_drake",   w: 35 },
+      { mob: "wyvern_kit",   w: 20 },
+      { mob: "elder_dragon", w: 10, bossGate: 3 }, // 伝説 で出現可能
+    ],
+  },
 };
 
-export const LOCATION_ORDER = ["forest", "cave", "marsh", "ruins", "mountain"];
+export const LOCATION_ORDER = ["forest", "cave", "marsh", "ruins", "mountain", "spirit_shrine", "moon_tower", "dragon_vale"];
 
 // Pure water always ambient (no roll required) — small chance everywhere.
 export const AMBIENT_DROP = { mat: "pure_water", w: 18 };
