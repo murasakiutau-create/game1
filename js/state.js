@@ -142,6 +142,7 @@ export function newAdvId() { return "adv_" + (advIdCounter++).toString(36) + "_"
 // ----- party helpers -----
 export const PARTY_MAX = 5;
 export const MAX_PARTIES = 5;
+export const MAX_ROSTER = 25;
 let partyIdCounter = 1;
 export function newPartyId() { return "pt_" + (partyIdCounter++).toString(36) + "_" + Math.floor(Math.random() * 1e6).toString(36); }
 
@@ -159,6 +160,25 @@ export function removeAdvFromParties(advId) {
   state.pendingDispatch = state.pendingDispatch.filter(p => (p.advIds || []).length > 0);
   const adv = state.party.find(a => a.id === advId);
   if (adv) adv.busy = false;
+}
+
+// Permanently let the adventurer go: remove from roster and all
+// per-adventurer side-tables. Refuses while the adventurer is on
+// dispatch (out of reach).
+export function dismissAdventurer(advId) {
+  const adv = state.party.find(a => a.id === advId);
+  if (!adv) return { ok: false, reason: "missing" };
+  const onDispatch = (state.outOnDispatch || []).some(p => (p.advIds || []).includes(advId));
+  if (onDispatch) return { ok: false, reason: "on-dispatch" };
+  removeAdvFromParties(advId);
+  state.party = state.party.filter(a => a.id !== advId);
+  delete state.learnedSpells?.[advId];
+  delete state.equippedSpells?.[advId];
+  delete state.equippedGear?.[advId];
+  delete state.passives?.[advId];
+  delete state.heldItems?.[advId];
+  delete state.strategies?.[advId];
+  return { ok: true, name: adv.name };
 }
 
 export function generateAdventurer(classId, rankId, rng_) {

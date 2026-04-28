@@ -2,7 +2,8 @@
 
 import { h, clear, btn, panel, modal, toast, tabs, confirmModal, qualityTag, dangerTag } from "./components.js";
 import { state, repTier, generateAdventurer, rng, syncRng,
-         PARTY_MAX, MAX_PARTIES, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
+         PARTY_MAX, MAX_PARTIES, MAX_ROSTER,
+         newPartyId, partyForAdv, removeAdvFromParties, dismissAdventurer } from "../state.js";
 import { openReturnModal } from "./returnModal.js";
 import { CLASSES } from "../data/adventurers.js";
 import { RANKS } from "../data/ranks.js";
@@ -121,21 +122,27 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
         h("div", { class: "muted", style: { marginTop: "0.4rem" } },
           pt ? `→ ${LOCATIONS[pt.locId]?.name || ""} へ派遣予定` :
           adv.injured ? "本日は休養（重傷）" : "未派遣"),
-        h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
+        h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap", gap: "0.3rem" } },
           btn("詳細", () => openAdventurerSheet(adv, refresh), { small: true, primary: true }),
           pt ? btn("パーティから外す", () => {
             removeAdvFromParties(adv.id);
             refresh();
           }, { small: true, ghost: true }) : null,
+          btn("解雇", () => promptDismiss(adv, refresh), { small: true, ghost: true }),
         ),
       );
       partyBody.appendChild(card);
     }
   }
-  phase.appendChild(panel("手駒の冒険者", partyBody, "✦"));
+  phase.appendChild(panel(`手駒の冒険者　(${state.party.length}/${MAX_ROSTER})`, partyBody, "✦"));
 
   // Market
-  const mktBody = h("div", null);
+  const rosterFull = state.party.length >= MAX_ROSTER;
+  const mktBody = h("div", null,
+    h("p", { class: "muted" },
+      `在籍中の冒険者：${state.party.length} / ${MAX_ROSTER} 名` +
+      (rosterFull ? "　（上限到達 — 解雇しないと新規雇用できません）" : "")),
+  );
   if (state.market.length === 0) {
     mktBody.appendChild(h("p", { class: "muted" }, "本日の応募者はいません。"));
   } else {
@@ -144,11 +151,14 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
       const cls = CLASSES[cand.classId];
       const rank = RANKS[cand.rankId];
       const canAfford = state.gold >= rank.hireCost;
-      grid.appendChild(h("div", { class: "parchment-card" + (canAfford ? "" : " disabled") },
+      const canHire = canAfford && !rosterFull;
+      const label = rosterFull ? "雇用枠が満杯" : (canAfford ? "雇う" : "金貨不足");
+      grid.appendChild(h("div", { class: "parchment-card" + (canHire ? "" : " disabled") },
         advSummary(cand),
         h("div", { class: "row between", style: { marginTop: "0.5rem" } },
           h("span", { class: "tag gold" }, `雇用金 ${rank.hireCost} G`),
-          btn(canAfford ? "雇う" : "金貨不足", () => hireFromMarket(cand, refresh), { primary: canAfford, disabled: !canAfford, small: true }),
+          btn(label, () => hireFromMarket(cand, refresh),
+            { primary: canHire, ghost: !canHire, disabled: !canHire, small: true }),
         ),
       ));
     }
@@ -189,8 +199,32 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
   host.appendChild(phase);
 }
 
+function promptDismiss(adv, refresh) {
+  confirmModal({
+    title: `${adv.name} を解雇`,
+    message: `${adv.name}（ランク${adv.rankId}）を解雇します。装備や習得魔法は失われ、復帰できません。よろしいですか？`,
+    confirmLabel: "解雇する",
+    danger: true,
+    onConfirm: () => {
+      const res = dismissAdventurer(adv.id);
+      if (!res.ok) {
+        toast(res.reason === "on-dispatch"
+          ? "派遣中の冒険者は解雇できません。明朝の帰還を待ってください。"
+          : "解雇できませんでした。", { error: true });
+        return;
+      }
+      toast(`${res.name}を解雇しました。`);
+      refresh();
+    },
+  });
+}
+
 function hireFromMarket(cand, refresh) {
   const rank = RANKS[cand.rankId];
+  if (state.party.length >= MAX_ROSTER) {
+    toast(`雇用できる冒険者は最大 ${MAX_ROSTER} 名までです。誰かを解雇してください。`, { error: true, ms: 3500 });
+    return;
+  }
   if (state.gold < rank.hireCost) { toast("金貨が足りません。", { error: true }); return; }
   state.gold -= rank.hireCost;
   state.party.push(cand);
