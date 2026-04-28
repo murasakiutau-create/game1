@@ -6,23 +6,32 @@
 
 ### 配布パッケージから（一番簡単）
 
-`game1-slice.zip` を解凍すると、中身は3ファイルだけです：
+`game1-slice.zip` を解凍すると `game1-play/` フォルダが出てきます。中身は **静的ファイル3つだけ**：
 
 ```
-dist/
+game1-play/
 ├── index.html
 ├── game.js
 └── game.css
 ```
 
-`dist/index.html` をブラウザで開くだけで遊べます。`<script type="module">` を使わない通常スクリプトとしてビルドしているので、`file://` 直開きでも、spck エディタの簡易プレビューでも、任意の静的ホストでも動きます。
+`package.json` や `tsconfig.json` などの設定ファイルは含まれていないので、spck エディタなどで `game1-play/` フォルダを開けば、純粋な静的サイトとして認識されてプレビューできます。
+
+`game1-play/index.html` をブラウザで開くだけでも遊べます（`<script type="module">` を使わない通常スクリプトなので `file://` 直開きでもOK）。
 
 簡易サーバ経由で起動する場合：
 
 ```sh
-cd dist
+cd game1-play
 python3 -m http.server 8080
 # → http://localhost:8080
+```
+
+### 配布ZIPを再生成
+
+```sh
+npm run package
+# → ./game1-slice.zip
 ```
 
 ### ソースから

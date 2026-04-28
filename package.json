@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "tsx": "^4.21.0",
