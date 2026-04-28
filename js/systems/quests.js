@@ -150,6 +150,7 @@ export function deliverFromInventory(qid, itemId, quality) {
   const q = state.quests.active.find(x => x.id === qid);
   if (!q) return { ok: false, reason: "missing" };
   if (q.kind !== "deliver" && q.kind !== "specialty") return { ok: false, reason: "wrong-kind" };
+  if (q.spec?.viaSale) return { ok: false, reason: "sale-only" };
   if (!matchesDeliverSpec(q, itemId, quality)) return { ok: false, reason: "no-match" };
   const ex = state.inventory.items.find(it => it.itemId === itemId && it.quality === quality);
   if (!ex || ex.count < 1) return { ok: false, reason: "no-stock" };

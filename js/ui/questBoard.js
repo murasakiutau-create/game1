@@ -66,11 +66,14 @@ export function openQuestBoard(refresh) {
     if (active.length > 0) {
       const sec = h("div", { class: "stack" });
       for (const q of active) {
-        const isDeliverable = q.kind === "deliver" || q.kind === "specialty";
+        const isDeliverable = (q.kind === "deliver" || q.kind === "specialty") && !q.spec?.viaSale;
         const actions = [];
         if (isDeliverable) {
           actions.push(btn("納品する", () => openDeliveryPicker(q, () => { rerender(); refresh && refresh(); }),
             { primary: true, small: true }));
+        } else if (q.kind === "deliver" && q.spec?.viaSale) {
+          actions.push(h("span", { class: "muted", style: { fontSize: "0.85em" } },
+            "店頭で売れたら自動でカウント"));
         }
         actions.push(btn("辞退", () => {
           confirmModal({

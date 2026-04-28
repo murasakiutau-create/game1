@@ -14,7 +14,7 @@ export const QUEST_TEMPLATES = [
   { id: "deliver_potions_3",  kind: "deliver", minTier: 0,
     title: () => "薬を3個納品",
     desc:  () => "村人に薬を売る。種類は問わない。",
-    spec: { category: "potion", count: 3 },
+    spec: { category: "potion", count: 3, viaSale: true },
     duration: 3, gold: 80, rep: 4 },
   { id: "hunt_goblin_3",      kind: "hunt", minTier: 0,
     title: () => "ゴブリンを3体討伐",

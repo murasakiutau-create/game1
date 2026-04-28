@@ -249,7 +249,7 @@
 .bottom-tabs button .icon.png-icon.icon-logs   { background-image: url("../assets/icons/logs.png"); }
 .bottom-tabs button .icon.png-icon.icon-party  { background-image: url("../assets/icons/party.png"); }
 .bottom-tabs button .icon.png-icon.icon-market { background-image: url("../assets/icons/market.png"); }
-.bottom-tabs button .icon.png-icon.icon-quests { background-image: url("../assets/icons/logs.png"); }
+.bottom-tabs button .icon.png-icon.icon-quests { background-image: url("../assets/icons/party.png"); }
 .bottom-tabs button .icon.png-icon.icon-shop   { background-image: url("../assets/icons/market.png"); }
 .bottom-tabs button[aria-current="true"] { color: var(--gold-soft); border-color: var(--gold-deep); background: rgba(184, 146, 79, 0.1); }
 
