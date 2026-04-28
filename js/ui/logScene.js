@@ -1,10 +1,10 @@
-// Log viewer modal: filter by day, kind, adventurer.
+// Log viewer modal: 記録 (filterable log) + セーブ tab.
 
-import { h, btn, modal, panel } from "./components.js";
+import { h, modal, panel, tabs } from "./components.js";
 import { state } from "../state.js";
 import { getLogs } from "../systems/log.js";
-import { CLASSES } from "../data/adventurers.js";
 import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
+import { renderSaveSlots, renderSaveCodeExport } from "./saveSlotsUI.js";
 
 const KIND_LABELS = {
   dispatch: "派遣",
@@ -17,64 +17,79 @@ const KIND_LABELS = {
 };
 
 let filter = { day: null, kind: null, advId: null };
+let currentTab = "logs";
 
 export function openLogViewer() {
-  let body = h("div", { class: "stack" });
+  const body = h("div", { class: "stack" });
   function rerender() {
     body.innerHTML = "";
-
-    const dayOptions = [...new Set(state.logs.map(l => l.day))].sort((a, b) => b - a);
-
-    const ctrls = h("div", { class: "row" },
-      h("label", null, "日 "),
-      selectFromList(["all", ...dayOptions], (v) => v === "all" ? "すべて" : `第${v}日`, filter.day == null ? "all" : filter.day, (v) => { filter.day = v === "all" ? null : +v; rerender(); }),
-      h("label", null, "種類 "),
-      selectFromList(["all", "dispatch", "encounter", "sale", "craft", "research", "hire", "system"], (v) => v === "all" ? "すべて" : KIND_LABELS[v], filter.kind || "all", (v) => { filter.kind = v === "all" ? null : v; rerender(); }),
-      h("label", null, "冒険者 "),
-      selectFromList(["all", ...state.party.map(a => a.id)], (v) => v === "all" ? "すべて" : (state.party.find(a => a.id === v)?.name || v), filter.advId || "all", (v) => { filter.advId = v === "all" ? null : v; rerender(); }),
-    );
-
-    const logs = getLogs({
-      day: filter.day,
-      kinds: filter.kind ? [filter.kind] : null,
-      advId: filter.advId,
-    });
-
-    const list = h("div", { class: "stack" });
-    if (logs.length === 0) list.appendChild(h("p", { class: "muted" }, "該当する記録がありません。"));
-    for (const l of logs.slice(0, 200)) {
-      const card = h("div", { class: "log-entry" },
-        h("div", { class: "row between" },
-          h("strong", null, `第${l.day}日 ${KIND_LABELS[l.kind] || l.kind}`),
-          h("span", { class: "muted" }, ""),
-        ),
-        h("div", null, l.summary || ""),
-      );
-      // expand: encounter detail
-      if (l.kind === "encounter" && l.detail?.log) {
-        const det = h("details", null,
-          h("summary", { class: "muted" }, "戦闘の詳細"),
-          h("div", { class: "combat-log" },
-            ...(l.detail.log).map(line => h("div", { class: line.tag || "" }, line.text))
-          )
-        );
-        card.appendChild(det);
-      }
-      if (l.kind === "dispatch" && l.detail?.drops?.length) {
-        const det = h("details", null,
-          h("summary", { class: "muted" }, "採取の詳細"),
-          h("ul", null, ...l.detail.drops.map(d => h("li", null,
-            `${MATERIALS[d.matId]?.name || d.matId} ${QUALITY_LABEL[d.q] || d.q} ×${d.n}`))),
-        );
-        card.appendChild(det);
-      }
-      list.appendChild(card);
-    }
-
-    body.appendChild(panel("📜 記録（直近30日分）", h("div", { class: "stack" }, ctrls, h("div", { class: "divider" }), list), "❦"));
+    body.appendChild(tabs([
+      { id: "logs", label: "記録" },
+      { id: "save", label: "セーブ" },
+    ], currentTab, (id) => { currentTab = id; rerender(); }));
+    if (currentTab === "logs") body.appendChild(renderLogsPanel(rerender));
+    else body.appendChild(renderSavePanel(rerender));
   }
   rerender();
   modal(body, { title: "記録" });
+}
+
+function renderLogsPanel(rerender) {
+  const dayOptions = [...new Set(state.logs.map(l => l.day))].sort((a, b) => b - a);
+
+  const ctrls = h("div", { class: "row" },
+    h("label", null, "日 "),
+    selectFromList(["all", ...dayOptions], (v) => v === "all" ? "すべて" : `第${v}日`, filter.day == null ? "all" : filter.day, (v) => { filter.day = v === "all" ? null : +v; rerender(); }),
+    h("label", null, "種類 "),
+    selectFromList(["all", "dispatch", "encounter", "sale", "craft", "research", "hire", "system"], (v) => v === "all" ? "すべて" : KIND_LABELS[v], filter.kind || "all", (v) => { filter.kind = v === "all" ? null : v; rerender(); }),
+    h("label", null, "冒険者 "),
+    selectFromList(["all", ...state.party.map(a => a.id)], (v) => v === "all" ? "すべて" : (state.party.find(a => a.id === v)?.name || v), filter.advId || "all", (v) => { filter.advId = v === "all" ? null : v; rerender(); }),
+  );
+
+  const logs = getLogs({
+    day: filter.day,
+    kinds: filter.kind ? [filter.kind] : null,
+    advId: filter.advId,
+  });
+
+  const list = h("div", { class: "stack" });
+  if (logs.length === 0) list.appendChild(h("p", { class: "muted" }, "該当する記録がありません。"));
+  for (const l of logs.slice(0, 200)) {
+    const card = h("div", { class: "log-entry" },
+      h("div", { class: "row between" },
+        h("strong", null, `第${l.day}日 ${KIND_LABELS[l.kind] || l.kind}`),
+        h("span", { class: "muted" }, ""),
+      ),
+      h("div", null, l.summary || ""),
+    );
+    if (l.kind === "encounter" && l.detail?.log) {
+      const det = h("details", null,
+        h("summary", { class: "muted" }, "戦闘の詳細"),
+        h("div", { class: "combat-log" },
+          ...(l.detail.log).map(line => h("div", { class: line.tag || "" }, line.text))
+        )
+      );
+      card.appendChild(det);
+    }
+    if (l.kind === "dispatch" && l.detail?.drops?.length) {
+      const det = h("details", null,
+        h("summary", { class: "muted" }, "採取の詳細"),
+        h("ul", null, ...l.detail.drops.map(d => h("li", null,
+          `${MATERIALS[d.matId]?.name || d.matId} ${QUALITY_LABEL[d.q] || d.q} ×${d.n}`))),
+      );
+      card.appendChild(det);
+    }
+    list.appendChild(card);
+  }
+
+  return panel("記録（直近30日分）", h("div", { class: "stack" }, ctrls, h("div", { class: "divider" }), list), "❦");
+}
+
+function renderSavePanel(rerender) {
+  return h("div", { class: "stack" },
+    panel("記録の保存（3スロット）", renderSaveSlots(rerender), "❦"),
+    panel("コードでエクスポート（端末間引継ぎ用）", renderSaveCodeExport(), "❖"),
+  );
 }
 
 function selectFromList(values, label, current, onChange) {
