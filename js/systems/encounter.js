@@ -9,6 +9,7 @@ import { EQUIPMENT, isAxe, isBow } from "../data/equipment.js";
 import { STRATEGY_PRESETS } from "../data/strategies.js";
 import { elementMult, elementLabel } from "../data/elements.js";
 import { PASSIVES } from "../data/passives.js";
+import { applyItemEffect, consumeHeldItem } from "./itemEffects.js";
 
 function passiveEffects(adv) {
   const ids = state.passives[adv.id] || [];
@@ -98,6 +99,20 @@ function executeAction(rule, ctx, log) {
     const s = pickSpellInSlot(adv, rule.school);
     if (!s) return null; // try next rule
     return castSpell(s, ctx, log);
+  }
+  if (rule.action === "useItem") {
+    const slots = state.heldItems[adv.id] || [];
+    let slotIdx = -1;
+    if (rule.itemId) {
+      slotIdx = slots.findIndex(h => h && h.itemId === rule.itemId);
+    } else if (slots.length > 0) {
+      slotIdx = 0;
+    }
+    if (slotIdx < 0) return null; // no matching item carried — try next rule
+    const ok = applyItemEffect(adv, slots[slotIdx], ctx, log);
+    if (!ok) return null;
+    consumeHeldItem(adv, slotIdx);
+    return { kind: "useItem" };
   }
   // attack
   const baseAtk = advStats.atk + buffs.atkAdd + (buffs.atkMult ? Math.floor(advStats.atk * buffs.atkMult) : 0);

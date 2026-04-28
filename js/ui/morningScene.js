@@ -183,6 +183,7 @@ function hireFromMarket(cand, refresh) {
   state.learnedSpells[cand.id] = [];
   state.strategies[cand.id] = { preset: "standard", custom: [] };
   state.passives[cand.id] = [];
+  state.heldItems[cand.id] = [];
   toast(`${cand.name}（ランク${cand.rankId}）を雇用しました。`);
   refresh();
 }
@@ -199,6 +200,7 @@ export function openAdventurerSheet(adv, refresh) {
     body.appendChild(advSummary(adv));
     body.appendChild(tabs([
       { id: "gear",     label: "装備" },
+      { id: "items",    label: "持ち物" },
       { id: "spells",   label: "魔法" },
       { id: "passives", label: "特性" },
       { id: "strategy", label: "戦略" },
@@ -206,6 +208,7 @@ export function openAdventurerSheet(adv, refresh) {
     ], tab, (id) => { tab = id; render(); }));
     body.appendChild(h("div", { class: "divider" }));
     if (tab === "gear") body.appendChild(renderGearTab(adv, render));
+    else if (tab === "items") body.appendChild(renderItemsTab(adv, render));
     else if (tab === "spells") body.appendChild(renderSpellsTab(adv, render));
     else if (tab === "passives") body.appendChild(renderPassivesTab(adv, render));
     else if (tab === "strategy") body.appendChild(renderStrategyTab(adv, render));
@@ -301,6 +304,93 @@ function openGearPicker(adv, slot, parentRerender) {
     ));
   }
   const m = modal(list, { title: `装備を選ぶ（${slot === "weapon" ? "武器" : slot === "armor" ? "防具" : "装身具"}）` });
+}
+
+// ---- Held items (combat consumables, max 2 slots) ----
+
+function renderItemsTab(adv, rerender) {
+  if (!Array.isArray(state.heldItems[adv.id])) state.heldItems[adv.id] = [];
+  const slots = state.heldItems[adv.id];
+  const wrap = h("div", { class: "stack" });
+  wrap.appendChild(h("p", { class: "muted" },
+    `戦闘中に使う消費アイテムを最大 2 個まで持たせられます（${slots.length}/2）。戦略タブの「アイテムを使う」と組み合わせると、HP が下がったとき自動で薬を飲ませる等ができます。`));
+
+  for (let i = 0; i < 2; i++) {
+    const slot = slots[i];
+    if (slot) {
+      const item = ITEMS[slot.itemId];
+      wrap.appendChild(h("div", { class: "parchment-card" },
+        h("div", { class: "row between" },
+          h("strong", null, iconChip("item"), item?.name || slot.itemId, " ", h("span", { class: "tag" }, QUALITY_LABEL[slot.quality] || slot.quality)),
+          h("span", { class: "muted" }, `スロット ${i + 1}`),
+        ),
+        h("p", { class: "muted" }, item?.blurb || ""),
+        h("div", { class: "row", style: { marginTop: "0.5rem" } },
+          btn("付け替え", () => openItemPicker(adv, i, rerender), { small: true, ghost: true }),
+          btn("外す", () => {
+            // Return the held item to inventory.
+            slots.splice(i, 1);
+            state.inventory.items.push({ itemId: slot.itemId, quality: slot.quality, count: 1 });
+            const ex = state.inventory.items.find(x => x !== state.inventory.items.at(-1) && x.itemId === slot.itemId && x.quality === slot.quality);
+            if (ex) { ex.count += 1; state.inventory.items.pop(); }
+            rerender();
+          }, { small: true, ghost: true }),
+        ),
+      ));
+    } else {
+      wrap.appendChild(h("div", { class: "parchment-card empty" },
+        h("div", { class: "row between" },
+          h("span", null, `スロット ${i + 1}（空き）`),
+          btn("セット", () => openItemPicker(adv, i, rerender), { small: true, primary: true }),
+        ),
+      ));
+    }
+  }
+  return wrap;
+}
+
+function openItemPicker(adv, slotIdx, parentRerender) {
+  // Only consumable potions are pickable. Equipment-grants and tomes are out.
+  const candidates = [];
+  for (const it of state.inventory.items) {
+    const item = ITEMS[it.itemId];
+    if (!item) continue;
+    if (item.cat !== "potion") continue;
+    if (item.grantsEquip || item.grantsSpell) continue;
+    candidates.push({ inv: it, item });
+  }
+
+  const list = h("div", { class: "stack" });
+  if (candidates.length === 0) {
+    list.appendChild(h("p", { class: "muted" }, "持たせられる消費アイテムが在庫にありません。"));
+  }
+  for (const c of candidates) {
+    list.appendChild(h("div", { class: "parchment-card selectable" },
+      h("div", { class: "row between" },
+        h("strong", null, iconChip("item"), c.item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[c.inv.quality])),
+        h("span", null, "在庫 ×" + c.inv.count),
+      ),
+      h("p", { class: "muted" }, c.item.blurb || ""),
+      h("div", { class: "row", style: { marginTop: "0.4rem" } },
+        btn("持たせる", () => {
+          // Pull one out of inventory.
+          c.inv.count -= 1;
+          if (c.inv.count <= 0) state.inventory.items = state.inventory.items.filter(x => x !== c.inv);
+          // If a previous item occupied the slot, return it to inventory.
+          const prev = state.heldItems[adv.id][slotIdx];
+          if (prev) {
+            const ex = state.inventory.items.find(x => x.itemId === prev.itemId && x.quality === prev.quality);
+            if (ex) ex.count += 1;
+            else state.inventory.items.push({ itemId: prev.itemId, quality: prev.quality, count: 1 });
+          }
+          state.heldItems[adv.id][slotIdx] = { itemId: c.item.id, quality: c.inv.quality };
+          m.close();
+          parentRerender();
+        }, { primary: true, small: true }),
+      ),
+    ));
+  }
+  const m = modal(list, { title: `スロット ${slotIdx + 1} に持たせる` });
 }
 
 // ---- Spells ----
@@ -532,6 +622,7 @@ function renderCustomEditor(adv, slot, rerender) {
         h("span", null, "→"),
         actionSelect(rule, () => rerender()),
         rule.action === "castSchool" ? schoolSelect(rule, cls, () => rerender()) : null,
+        rule.action === "useItem" ? itemSelect(rule, adv, () => rerender()) : null,
         btn("削除", () => { slot.custom.splice(i, 1); rerender(); }, { small: true, ghost: true }),
       ),
     ));
@@ -561,7 +652,12 @@ function triggerSelect(rule, onChange) {
   return sel;
 }
 function actionSelect(rule, onChange) {
-  const sel = h("select", { onChange: (e) => { rule.action = e.target.value; if (rule.action !== "castSchool") delete rule.school; onChange(); } });
+  const sel = h("select", { onChange: (e) => {
+    rule.action = e.target.value;
+    if (rule.action !== "castSchool") delete rule.school;
+    if (rule.action !== "useItem") delete rule.itemId;
+    onChange();
+  } });
   for (const a of ACTION_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = a.id; opt.textContent = a.label;
@@ -580,6 +676,36 @@ function schoolSelect(rule, cls, onChange) {
     sel.appendChild(opt);
   }
   if (!rule.school && sel.options.length) rule.school = sel.options[0].value;
+  return sel;
+}
+function itemSelect(rule, adv, onChange) {
+  const slots = state.heldItems[adv.id] || [];
+  const sel = h("select", { onChange: (e) => {
+    rule.itemId = e.target.value === "__any" ? null : e.target.value;
+    onChange();
+  } });
+  // "Any held item" option — convenient for early game.
+  const anyOpt = document.createElement("option");
+  anyOpt.value = "__any"; anyOpt.textContent = "持ち物（何でも）";
+  if (!rule.itemId) anyOpt.selected = true;
+  sel.appendChild(anyOpt);
+  // De-duplicate by itemId so the dropdown isn't repetitive when both slots
+  // hold the same potion.
+  const seen = new Set();
+  for (const s of slots) {
+    if (!s || seen.has(s.itemId)) continue;
+    seen.add(s.itemId);
+    const item = ITEMS[s.itemId];
+    const opt = document.createElement("option");
+    opt.value = s.itemId; opt.textContent = item?.name || s.itemId;
+    if (rule.itemId === s.itemId) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  if (slots.length === 0) {
+    const empty = document.createElement("option");
+    empty.value = "__any"; empty.textContent = "（持ち物なし）"; empty.disabled = true;
+    sel.appendChild(empty);
+  }
   return sel;
 }
 

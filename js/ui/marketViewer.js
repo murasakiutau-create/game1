@@ -54,6 +54,7 @@ function hire(cand, after) {
   state.learnedSpells[cand.id] = [];
   state.strategies[cand.id] = { preset: "standard", custom: [] };
   state.passives[cand.id] = [];
+  state.heldItems[cand.id] = [];
   toast(`${cand.name}（ランク${cand.rankId}）を雇用しました。`);
   after();
 }

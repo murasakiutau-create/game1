@@ -40,6 +40,7 @@ export const state = {
   equippedSpells: {},   // advId -> [spellId] (<=slot count)
   equippedGear: {},     // advId -> { weapon, armor, trinket }
   passives: {},         // advId -> [passiveId] (<=rank.passiveSlots)
+  heldItems: {},        // advId -> [{ itemId, quality }] up to 2 — combat consumables
   pendingDispatch: [],  // [{ id, locId, advIds:[...] }] — parties planned for today
   outOnDispatch: [],    // [{ id, locId, advIds:[...] }] — parties currently away (return next morning)
   dispatchResults: [],  // populated next morning (per-party)
@@ -251,6 +252,7 @@ export function newGame() {
   state.equippedSpells = {};
   state.equippedGear = {};
   state.passives = {};
+  state.heldItems = {};
   state.pendingDispatch = [];
   state.outOnDispatch = [];
   state.dispatchResults = [];
@@ -272,6 +274,7 @@ export function newGame() {
   state.equippedSpells[starter.id] = [];
   state.learnedSpells[starter.id] = [];
   state.passives[starter.id] = [];
+  state.heldItems[starter.id] = [];
 
   // Starting materials so player can craft on day 1
   addMat("herb", "norm", 4);
@@ -294,6 +297,11 @@ export function loadFromObject(obj) {
   if (!Array.isArray(state.outOnDispatch)) state.outOnDispatch = [];
   // Migration: introduced state.lastDispatch (redo-last-party feature)
   if (!Array.isArray(state.lastDispatch)) state.lastDispatch = [];
+  // Migration: introduced state.heldItems (combat-use consumables)
+  if (!state.heldItems || typeof state.heldItems !== "object") state.heldItems = {};
+  for (const a of state.party) {
+    if (!Array.isArray(state.heldItems[a.id])) state.heldItems[a.id] = [];
+  }
 }
 
 export function snapshot() {

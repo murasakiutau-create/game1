@@ -85,6 +85,7 @@ export const TRIGGER_OPTIONS = [
 export const ACTION_OPTIONS = [
   { id: "attack", label: "通常攻撃", needsSchool: false },
   { id: "castSchool", label: "魔法を使う（系統）", needsSchool: true },
+  { id: "useItem", label: "アイテムを使う", needsItem: true },
   { id: "flee", label: "敗走", needsSchool: false },
 ];
 
