@@ -279,14 +279,13 @@
   font-weight: bold;
 }
 
-.rank-seal.rank-S { background: radial-gradient(circle at 35% 35%, #fff5d0, #ffd870 70%, #b07820); border-color: #6a3812; }
-.rank-seal.rank-A { background: radial-gradient(circle at 35% 35%, #ffe8b8, #e8b450 70%, #8c5a18); }
-.rank-seal.rank-B { background: radial-gradient(circle at 35% 35%, #f8e6b8, #c8a058 70%, #846130); }
-.rank-seal.rank-C { background: radial-gradient(circle at 35% 35%, #e8d8b0, #ad8c50 70%, #5c4218); }
-.rank-seal.rank-D, .rank-seal.rank-E, .rank-seal.rank-F {
-  background: radial-gradient(circle at 35% 35%, #d6c8a8, #908060 70%, #4a3820);
-  color: #2a1c10;
-}
+.rank-seal.rank-S { background: radial-gradient(circle at 35% 35%, #ffe8f8, #f0a8d8 60%, #8a2a8a); border-color: #5a1a5a; color: #2a0a2a; }
+.rank-seal.rank-A { background: radial-gradient(circle at 35% 35%, #fff5d0, #ffd870 70%, #b07820); border-color: #6a3812; }
+.rank-seal.rank-B { background: radial-gradient(circle at 35% 35%, #d8ecf6, #6ea0c0 70%, #2f5070); border-color: #1a3a55; color: #0a1a30; }
+.rank-seal.rank-C { background: radial-gradient(circle at 35% 35%, #ffe0b8, #d89058 70%, #8c4a18); border-color: #4a2008; }
+.rank-seal.rank-D { background: radial-gradient(circle at 35% 35%, #f0eee8, #b8b5ad 70%, #5c5850); border-color: #3a3530; color: #1a1815; }
+.rank-seal.rank-E { background: radial-gradient(circle at 35% 35%, #f8d8b0, #c08850 70%, #6c3f1c); border-color: #3a2008; }
+.rank-seal.rank-F { background: radial-gradient(circle at 35% 35%, #d8d4cc, #9a958c 70%, #4a4640); border-color: #2a2620; color: #1a1815; }
 
 /* Reputation stars */
 .rep-stars { color: var(--gold-soft); letter-spacing: 0.1em; font-size: 0.95em; }

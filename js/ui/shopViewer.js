@@ -29,7 +29,6 @@ function renderOverview() {
   const grid = h("div", { class: "card-grid" },
     statCard("店ランク", `${tier.label}　${stars}`),
     statCard("所持金貨", `${state.gold.toLocaleString()} G`),
-    statCard("棚の数", `${state.shopShelves} / ${maxShelvesAllowed()} 個`),
     statCard("陳列容量", `${shelfTypesUsed()} / ${tierMaxTypes} 種類`),
     statCard("店頭の在庫", `${shelfStockTotal()} 点`),
     statCard("倉庫アイテム", `${totalItems} 点（${(state.inventory.items || []).length} 種類）`),
@@ -77,7 +76,7 @@ function openMaterialList() {
         h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3rem" } },
           ...QUALITY_LEVELS
             .filter(q => (inv[q] || 0) > 0)
-            .map(q => h("span", { class: "tag" }, `${QUALITY_LABEL[q]} ×${inv[q]}`)),
+            .map(q => h("span", { class: `tag q-${q}` }, `${QUALITY_LABEL[q]} ×${inv[q]}`)),
         ),
       ));
     }
@@ -97,7 +96,7 @@ function renderShelfPanel() {
     grid.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name, " ",
-          h("span", { class: "tag" }, QUALITY_LABEL[s.quality])),
+          h("span", { class: `tag q-${s.quality}` }, QUALITY_LABEL[s.quality])),
         h("span", null, `×${s.count}`),
       ),
       h("div", { class: "muted" },
@@ -118,7 +117,7 @@ function renderInventoryPanel() {
     grid.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name, " ",
-          h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
+          h("span", { class: `tag q-${it.quality}` }, QUALITY_LABEL[it.quality])),
         h("span", null, `×${it.count}`),
       ),
       h("div", { class: "muted" }, CATEGORY_LABELS[item.cat] || item.cat),

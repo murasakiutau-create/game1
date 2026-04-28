@@ -1,6 +1,6 @@
 // Morning scene: party overview, dispatch wizard per adventurer, hire market.
 
-import { h, clear, btn, panel, modal, toast, tabs, confirmModal } from "./components.js";
+import { h, clear, btn, panel, modal, toast, tabs, confirmModal, qualityTag, dangerTag } from "./components.js";
 import { state, repTier, generateAdventurer, rng, syncRng,
          PARTY_MAX, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
 import { openReturnModal } from "./returnModal.js";
@@ -61,7 +61,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
       partiesBody.appendChild(h("div", { class: "parchment-card" },
         h("div", { class: "row between" },
           h("strong", null, `${loc?.name || "—"}　`,
-            h("span", { class: "tag wax" }, `危険度 ${loc?.danger ?? "?"}`)),
+            dangerTag(loc?.danger ?? 1)),
           h("span", { class: "tag" }, `${(pt.advIds || []).length} / ${PARTY_MAX}名`),
         ),
         memberCards,
@@ -325,7 +325,7 @@ function renderItemsTab(adv, rerender) {
       const item = ITEMS[slot.itemId];
       wrap.appendChild(h("div", { class: "parchment-card" },
         h("div", { class: "row between" },
-          h("strong", null, iconChip("item"), item?.name || slot.itemId, " ", h("span", { class: "tag" }, QUALITY_LABEL[slot.quality] || slot.quality)),
+          h("strong", null, iconChip("item"), item?.name || slot.itemId, " ", h("span", { class: `tag q-${slot.quality}` }, QUALITY_LABEL[slot.quality] || slot.quality)),
           h("span", { class: "muted" }, `スロット ${i + 1}`),
         ),
         h("p", { class: "muted" }, item?.blurb || ""),
@@ -371,7 +371,7 @@ function openItemPicker(adv, slotIdx, parentRerender) {
   for (const c of candidates) {
     list.appendChild(h("div", { class: "parchment-card selectable" },
       h("div", { class: "row between" },
-        h("strong", null, iconChip("item"), c.item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[c.inv.quality])),
+        h("strong", null, iconChip("item"), c.item.name, " ", h("span", { class: `tag q-${c.inv.quality}` }, QUALITY_LABEL[c.inv.quality])),
         h("span", null, "在庫 ×" + c.inv.count),
       ),
       h("p", { class: "muted" }, c.item.blurb || ""),
@@ -764,7 +764,7 @@ function renderDispatchTab(adv, onDispatched) {
     const loc = LOCATIONS[lid];
     if ((loc.unlockTier || 0) > repTier().index) continue;
     grid.appendChild(h("div", { class: "parchment-card selectable" },
-      h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
+      h("h3", null, loc.name, " ", dangerTag(loc.danger)),
       h("p", { class: "muted" }, loc.blurb),
       h("div", { class: "row" },
         btn("ここへ派遣", () => {
@@ -833,7 +833,7 @@ export function openPartyFormation(refresh) {
         const loc = LOCATIONS[lid];
         if ((loc.unlockTier || 0) > repTier().index) continue;
         grid.appendChild(h("div", { class: "parchment-card selectable" },
-          h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
+          h("h3", null, loc.name, " ", dangerTag(loc.danger)),
           h("p", { class: "muted" }, loc.blurb),
           btn("ここに決める", () => { chosenLoc = lid; step = "members"; rerender(); }, { primary: true, small: true }),
         ));
@@ -946,7 +946,7 @@ function openLocationPicker(pt, refresh) {
     if ((loc.unlockTier || 0) > repTier().index && lid !== pt.locId) continue;
     const isCurrent = lid === pt.locId;
     grid.appendChild(h("div", { class: "parchment-card selectable" + (isCurrent ? " selected" : "") },
-      h("h3", null, loc.name, " ", h("span", { class: "tag wax" }, "危険度 " + loc.danger)),
+      h("h3", null, loc.name, " ", dangerTag(loc.danger)),
       h("p", { class: "muted" }, loc.blurb),
       btn(isCurrent ? "現在の派遣先" : "ここへ変更", () => {
         if (isCurrent) return;

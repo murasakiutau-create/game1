@@ -141,7 +141,7 @@ function openDeliveryPicker(q, onDelivered) {
       grid.appendChild(h("div", { class: "parchment-card" },
         h("div", { class: "row between" },
           h("strong", null, item?.name || it.itemId, " ",
-            h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
+            h("span", { class: `tag q-${it.quality}` }, QUALITY_LABEL[it.quality])),
           h("span", null, `×${it.count}`),
         ),
         h("div", { class: "row" },

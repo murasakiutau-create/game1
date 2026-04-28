@@ -31,39 +31,20 @@ export function ensureShopShelves() {
   }
 }
 
-export function shelfTypesMax() {
-  ensureShopShelves();
-  return state.shopShelves * SHELF_TYPES_PER_SHELF;
-}
-
-export function shelfTypesUsed() {
-  return (state.shelf || []).length;
-}
-
 export function maxShelvesAllowed() {
   const tier = repTier().index;
   return MAX_SHELVES_BY_TIER[Math.min(tier, MAX_SHELVES_BY_TIER.length - 1)];
 }
 
-export function nextShelfCost() {
+// Capacity auto-scales with reputation tier — the player doesn't have to
+// pay to unlock the per-tier max. (Old saves used to track state.shopShelves
+// for manual expansion; the field is preserved for migration but no longer
+// gates capacity.)
+export function shelfTypesMax() {
   ensureShopShelves();
-  const next = state.shopShelves + 1;
-  return SHELF_COSTS[next] ?? null;
+  return maxShelvesAllowed() * SHELF_TYPES_PER_SHELF;
 }
 
-export function canBuyShelf() {
-  ensureShopShelves();
-  if (state.shopShelves >= maxShelvesAllowed()) return { ok: false, reason: "tier" };
-  const cost = nextShelfCost();
-  if (cost == null) return { ok: false, reason: "max" };
-  if (state.gold < cost) return { ok: false, reason: "gold", cost };
-  return { ok: true, cost };
-}
-
-export function buyShelf() {
-  const check = canBuyShelf();
-  if (!check.ok) return check;
-  state.gold -= check.cost;
-  state.shopShelves += 1;
-  return { ok: true, shelves: state.shopShelves, cost: check.cost };
+export function shelfTypesUsed() {
+  return (state.shelf || []).length;
 }

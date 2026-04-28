@@ -136,6 +136,23 @@ export function spinner(value, min, max, onChange) {
   return h("span", { class: "spinner" }, dec, valBox, inc);
 }
 
+// ── Themed tag helpers (quality / danger / rank) ──
+import { QUALITY_LABEL } from "../data/materials.js";
+
+export function qualityTag(quality, suffix) {
+  const label = QUALITY_LABEL[quality] || quality;
+  return h("span", { class: `tag q-${quality}` }, suffix ? `${label}${suffix}` : label);
+}
+
+export function dangerTag(level) {
+  const lv = Math.max(1, Math.min(7, Number(level) || 1));
+  return h("span", { class: `tag danger-${lv}` }, `危険度 ${level}`);
+}
+
+export function rankTag(rankId) {
+  return h("span", { class: `tag rank-${rankId}` }, rankId);
+}
+
 // Tabs
 export function tabs(items, current, onChange) {
   const bar = h("div", { class: "tabbar", role: "tablist" });
