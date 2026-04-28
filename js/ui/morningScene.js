@@ -2,7 +2,7 @@
 
 import { h, clear, btn, panel, modal, toast, tabs, confirmModal, qualityTag, dangerTag } from "./components.js";
 import { state, repTier, generateAdventurer, rng, syncRng,
-         PARTY_MAX, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
+         PARTY_MAX, MAX_PARTIES, newPartyId, partyForAdv, removeAdvFromParties } from "../state.js";
 import { openReturnModal } from "./returnModal.js";
 import { CLASSES } from "../data/adventurers.js";
 import { RANKS } from "../data/ranks.js";
@@ -16,6 +16,7 @@ import { ELEMENTS, elementLabel } from "../data/elements.js";
 import { PASSIVES, PASSIVE_ORDER, passivesAllowedForClass, passiveSlotsForRank } from "../data/passives.js";
 import { spellIconKind, itemIconKind, iconChip } from "./iconKind.js";
 import { renderQuestBoardSummary } from "./questBoard.js";
+import { openLocationDetail } from "./locationDetail.js";
 
 // Tracks which day we already auto-opened the return modal for, so it
 // only pops up once per new morning even if the scene re-renders.
@@ -68,6 +69,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
         h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
           btn("メンバー編集", () => openPartyEditor(pt, refresh), { small: true, primary: true }),
           btn("派遣先変更", () => openLocationPicker(pt, refresh), { small: true, dark: true, sfx: "plain" }),
+          btn("派遣先詳細", () => openLocationDetail(pt.locId), { small: true, ghost: true, sfx: "plain" }),
           btn("解散", () => {
             confirmModal({
               title: "パーティ解散",
@@ -88,8 +90,19 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
       ));
     }
   }
-  partiesBody.appendChild(btn("＋ 新しいパーティを編成", () => openPartyFormation(refresh),
-    { primary: true, block: true }));
+  {
+    const atLimit = state.pendingDispatch.length >= MAX_PARTIES;
+    partiesBody.appendChild(btn(
+      atLimit ? `編成上限（${MAX_PARTIES}組）に到達` : "＋ 新しいパーティを編成",
+      () => {
+        if (atLimit) {
+          toast(`同時に編成できるパーティは ${MAX_PARTIES} 組までです。`, { error: true });
+          return;
+        }
+        openPartyFormation(refresh);
+      },
+      { primary: !atLimit, ghost: atLimit, block: true, disabled: atLimit }));
+  }
   if ((state.lastDispatch || []).length > 0) {
     partiesBody.appendChild(btn("⟲ 前回と同じ編成で派遣", () => redoLastDispatch(refresh),
       { dark: true, block: true, sfx: "plain" }));
@@ -766,13 +779,18 @@ function renderDispatchTab(adv, onDispatched) {
     grid.appendChild(h("div", { class: "parchment-card selectable" },
       h("h3", null, loc.name, " ", dangerTag(loc.danger)),
       h("p", { class: "muted" }, loc.blurb),
-      h("div", { class: "row" },
+      h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3rem" } },
         btn("ここへ派遣", () => {
+          if (state.pendingDispatch.length >= MAX_PARTIES) {
+            toast(`同時に編成できるパーティは ${MAX_PARTIES} 組までです。`, { error: true });
+            return;
+          }
           state.pendingDispatch.push({ id: newPartyId(), locId: lid, advIds: [adv.id] });
           adv.busy = true;
           toast(`${adv.name}を ${loc.name} へ送り出します。`);
           onDispatched();
         }, { primary: true, small: true }),
+        btn("詳細", () => openLocationDetail(lid), { small: true, ghost: true, sfx: "plain" }),
       ),
     ));
   }
@@ -788,6 +806,7 @@ function redoLastDispatch(refresh) {
   let restored = 0;
   let dropped = 0;
   for (const snap of snapshots) {
+    if (state.pendingDispatch.length >= MAX_PARTIES) { dropped += (snap.advIds || []).length; continue; }
     const ids = [];
     for (const id of (snap.advIds || [])) {
       const adv = state.party.find(a => a.id === id);
@@ -835,7 +854,10 @@ export function openPartyFormation(refresh) {
         grid.appendChild(h("div", { class: "parchment-card selectable" },
           h("h3", null, loc.name, " ", dangerTag(loc.danger)),
           h("p", { class: "muted" }, loc.blurb),
-          btn("ここに決める", () => { chosenLoc = lid; step = "members"; rerender(); }, { primary: true, small: true }),
+          h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3rem" } },
+            btn("ここに決める", () => { chosenLoc = lid; step = "members"; rerender(); }, { primary: true, small: true }),
+            btn("詳細", () => openLocationDetail(lid), { small: true, ghost: true, sfx: "plain" }),
+          ),
         ));
       }
       body.appendChild(grid);
@@ -867,6 +889,10 @@ export function openPartyFormation(refresh) {
         btn("← 派遣先を選び直す", () => { step = "loc"; rerender(); }, { ghost: true, small: true }),
         btn(`このメンバーで結成（${chosenIds.size}名）`, () => {
           if (chosenIds.size === 0) { toast("最低1名は選んでください。", { error: true }); return; }
+          if (state.pendingDispatch.length >= MAX_PARTIES) {
+            toast(`同時に編成できるパーティは ${MAX_PARTIES} 組までです。`, { error: true });
+            return;
+          }
           const partyObj = { id: newPartyId(), locId: chosenLoc, advIds: [...chosenIds] };
           state.pendingDispatch.push(partyObj);
           for (const id of chosenIds) {
@@ -948,13 +974,16 @@ function openLocationPicker(pt, refresh) {
     grid.appendChild(h("div", { class: "parchment-card selectable" + (isCurrent ? " selected" : "") },
       h("h3", null, loc.name, " ", dangerTag(loc.danger)),
       h("p", { class: "muted" }, loc.blurb),
-      btn(isCurrent ? "現在の派遣先" : "ここへ変更", () => {
-        if (isCurrent) return;
-        pt.locId = lid;
-        toast(`派遣先を ${loc.name} に変更しました。`);
-        m.close();
-        refresh();
-      }, { primary: !isCurrent, disabled: isCurrent, small: true }),
+      h("div", { class: "row", style: { flexWrap: "wrap", gap: "0.3rem" } },
+        btn(isCurrent ? "現在の派遣先" : "ここへ変更", () => {
+          if (isCurrent) return;
+          pt.locId = lid;
+          toast(`派遣先を ${loc.name} に変更しました。`);
+          m.close();
+          refresh();
+        }, { primary: !isCurrent, disabled: isCurrent, small: true }),
+        btn("詳細", () => openLocationDetail(lid), { small: true, ghost: true, sfx: "plain" }),
+      ),
     ));
   }
   body.appendChild(grid);

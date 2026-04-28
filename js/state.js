@@ -141,6 +141,7 @@ export function newAdvId() { return "adv_" + (advIdCounter++).toString(36) + "_"
 
 // ----- party helpers -----
 export const PARTY_MAX = 5;
+export const MAX_PARTIES = 5;
 let partyIdCounter = 1;
 export function newPartyId() { return "pt_" + (partyIdCounter++).toString(36) + "_" + Math.floor(Math.random() * 1e6).toString(36); }
 
