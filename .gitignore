@@ -1,6 +1,7 @@
 node_modules
 dist
 *.zip
+!game1-slice.zip
 .env
 .env.local
 .vite
