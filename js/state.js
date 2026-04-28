@@ -54,6 +54,7 @@ export const state = {
     earnedToday: 0,
     customerLogToday: [],
   },
+  quests: { available: [], active: [], history: [] },
   flags: {
     introSeen: false,
   },
@@ -263,6 +264,7 @@ export function newGame() {
   state.logs = [];
   state.researchedToday = 0;
   state.bookkeeping = { soldToday: 0, earnedToday: 0, customerLogToday: [] };
+  state.quests = { available: [], active: [], history: [] };
   state.flags = { introSeen: false };
 
   // Starter adventurer: a free F-rank warrior to get going.
@@ -301,6 +303,11 @@ export function loadFromObject(obj) {
   if (!state.heldItems || typeof state.heldItems !== "object") state.heldItems = {};
   for (const a of state.party) {
     if (!Array.isArray(state.heldItems[a.id])) state.heldItems[a.id] = [];
+  }
+  // Migration: introduced state.quests (daily contracts)
+  if (!state.quests || typeof state.quests !== "object") state.quests = { available: [], active: [], history: [] };
+  for (const k of ["available", "active", "history"]) {
+    if (!Array.isArray(state.quests[k])) state.quests[k] = [];
   }
 }
 

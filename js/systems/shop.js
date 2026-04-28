@@ -7,6 +7,7 @@ import { ITEMS, priceForItem, CATEGORY_LABELS } from "../data/recipes.js";
 import { CUSTOMER_TYPES, POOL_BY_TIER, CUSTOMERS_PER_DAY_BY_TIER } from "../data/customers.js";
 import { QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
 import { pushLog } from "./log.js";
+import { onSale as questsOnSale } from "./quests.js";
 
 // Place an item from inventory onto the shelf with a posted price.
 export function listOnShelf(itemId, quality, count = 1, askPrice = null) {
@@ -133,7 +134,9 @@ export function runShopSimulation() {
     sales += 1;
     state.gold += paid;
     state.rep += cust.repBonus + (pick.quality === "fine" ? 3 : pick.quality === "good" ? 1 : 0);
-    events.push({ type: "sale", cust: cust.name, item: item.name, q: QUALITY_LABEL[pick.quality], paid });
+    const ev = { type: "sale", cust: cust.name, item: item.name, q: QUALITY_LABEL[pick.quality], qualityKey: pick.quality, paid };
+    events.push(ev);
+    questsOnSale(ev);
   }
 
   state.bookkeeping.soldToday = sales;

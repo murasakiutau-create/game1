@@ -15,6 +15,7 @@ import { advSummary, rankSeal } from "./advCard.js";
 import { ELEMENTS, elementLabel } from "../data/elements.js";
 import { PASSIVES, PASSIVE_ORDER, passivesAllowedForClass, passiveSlotsForRank } from "../data/passives.js";
 import { spellIconKind, itemIconKind, iconChip } from "./iconKind.js";
+import { renderQuestBoardSummary } from "./questBoard.js";
 
 // Tracks which day we already auto-opened the return modal for, so it
 // only pops up once per new morning even if the scene re-renders.
@@ -26,6 +27,9 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
   phase.appendChild(panel("朝　— 派遣の支度",
     h("p", { class: "muted" }, "パーティを編成して採取地へ送り出します。1パーティ最大5名、複数パーティを別々の場所に派遣できます。"),
   ));
+
+  // Quest board (always visible)
+  phase.appendChild(renderQuestBoardSummary(refresh));
 
   // Auto-show "returned from dispatch" modal once per new morning
   if ((state.dispatchResults || []).length > 0 && returnModalShownForDay !== state.day) {

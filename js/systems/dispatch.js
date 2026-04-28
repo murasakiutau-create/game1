@@ -9,6 +9,7 @@ import { EQUIPMENT } from "../data/equipment.js";
 import { PASSIVES } from "../data/passives.js";
 import { runEncounter, runPartyEncounter } from "./encounter.js";
 import { pushLog } from "./log.js";
+import { onDispatchResolved as questsOnDispatch } from "./quests.js";
 
 function passiveEffects(adv) {
   const ids = state.passives[adv.id] || [];
@@ -344,5 +345,6 @@ export function resolvePartyDispatch(party_) {
       detail: { ...enc, locName: loc.name, partyNames: memberNames },
     });
   }
+  questsOnDispatch(result);
   return result;
 }

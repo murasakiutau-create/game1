@@ -11,6 +11,7 @@ import { openLogViewer } from "./ui/logScene.js";
 import { openPartyViewer } from "./ui/partyViewer.js";
 import { openMarketViewer } from "./ui/marketViewer.js";
 import { advancePhase, refreshMarket } from "./systems/time.js";
+import { refreshQuests } from "./systems/quests.js";
 import { toast } from "./ui/components.js";
 
 const root = document.getElementById("app");
@@ -44,9 +45,14 @@ function render() {
 
 function ensurePostStart() {
   // First time the game enters play mode after a new game / load:
-  // make sure there's a market on day 1.
+  // make sure there's a market and quest board on day 1.
   if (state.market.length === 0 && state.phase === "morning") {
     refreshMarket();
+  }
+  if ((state.quests?.available?.length ?? 0) === 0
+      && (state.quests?.active?.length ?? 0) === 0
+      && state.phase === "morning") {
+    refreshQuests();
   }
 }
 

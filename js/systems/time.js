@@ -3,6 +3,7 @@
 
 import { state, rng, syncRng, repTier, ensureRecipeMap, generateAdventurer } from "../state.js";
 import { resolveDispatch, resolvePartyDispatch } from "./dispatch.js";
+import { refreshQuests, tickQuestDeadlines } from "./quests.js";
 import { runShopSimulation } from "./shop.js";
 import { pushLog } from "./log.js";
 import { RANK_ORDER, RANKS, MARKET_WEIGHTS, rankRequirementMet } from "../data/ranks.js";
@@ -122,6 +123,8 @@ export function advancePhase(opts = {}) {
     }
 
     refreshMarket();
+    tickQuestDeadlines();
+    refreshQuests();
     return;
   }
 }
