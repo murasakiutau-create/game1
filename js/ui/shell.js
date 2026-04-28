@@ -1,6 +1,6 @@
 // Top HUD + scene host. Other scenes mount inside `#scene-host`.
 
-import { h, clear, btn } from "./components.js";
+import { h, clear } from "./components.js";
 import { state, repTier, PHASE_LABEL } from "../state.js";
 
 export function renderShell(root, sceneEl, navHandlers) {
@@ -25,7 +25,6 @@ export function renderShell(root, sceneEl, navHandlers) {
       h("span", { class: "label" }, "評判"),
       h("span", { class: "value" }, `${tier.label} `, h("span", { class: "rep-stars" }, stars)),
     ),
-    btn("記録", navHandlers.openLogs, { ghost: true, small: true }),
   );
 
   const sceneHost = h("main", { class: "scene", id: "scene-host" }, sceneEl);

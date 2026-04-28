@@ -113,7 +113,7 @@ ul { padding-left: 1.2em; margin: 0.4em 0; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.4rem 0.8rem;
-  padding: 0.5rem 0.9rem 0.5rem 3.6rem;
+  padding: 0.5rem 0.9rem 0.5rem 3rem;
   font-size: clamp(0.85rem, 2vw, 1rem);
   color: var(--gold-soft);
   border: 1px solid var(--gold-deep);
@@ -278,46 +278,64 @@ ul { padding-left: 1.2em; margin: 0.4em 0; }
 
 /* ---------- Settings: top-left fab + modal controls ---------- */
 
-.settings-fab {
+.side-rail {
   position: fixed;
-  top: max(0.6rem, env(safe-area-inset-top));
-  left: max(0.6rem, env(safe-area-inset-left));
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: max(0.5rem, env(safe-area-inset-left));
   z-index: 40;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.side-fab {
   border: 1px solid #1a0e06;
   background:
     radial-gradient(ellipse at 32% 28%, #5a401e 0%, #2d1c0e 65%, #14100a 100%);
   color: var(--gold-soft);
-  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
   box-shadow:
     inset 0 1px 0 rgba(220, 175, 110, 0.45),
     inset 0 -2px 0 rgba(10, 6, 2, 0.55),
-    0 4px 10px rgba(0, 0, 0, 0.6);
+    0 3px 7px rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
-.settings-fab:hover {
+.side-fab:hover {
   transform: translateY(-1px);
   color: #fbe9bf;
   box-shadow:
     inset 0 1px 0 rgba(220, 175, 110, 0.55),
     inset 0 -2px 0 rgba(10, 6, 2, 0.55),
-    0 6px 14px rgba(0, 0, 0, 0.7);
+    0 5px 11px rgba(0, 0, 0, 0.65);
 }
-.settings-fab:active {
+.side-fab:active {
   transform: translateY(1px);
   box-shadow:
     inset 0 2px 4px rgba(10, 6, 2, 0.6),
     0 1px 2px rgba(0, 0, 0, 0.5);
 }
-.settings-fab:focus-visible { outline: 2px solid var(--wax); outline-offset: 2px; }
+.side-fab:focus-visible { outline: 2px solid var(--wax); outline-offset: 2px; }
+
+.side-fab--gear {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.05rem;
+}
+.side-fab--logs {
+  height: 28px;
+  padding: 0 0.6rem;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
 
 .settings-body {
   display: grid;
@@ -645,7 +663,7 @@ input[type="number"], input[type="text"] {
 /* Mobile (<= 480px) */
 @media (max-width: 480px) {
   :root { --tile-min: 100%; }
-  .hud { font-size: 0.85rem; padding: 0.4rem 0.5rem 0.4rem 3.6rem; }
+  .hud { font-size: 0.85rem; padding: 0.4rem 0.5rem 0.4rem 2.8rem; }
   .hud .stat .label { display: none; }
   .scene { gap: 0.4rem; }
   h1 { font-size: 1.4rem; }
