@@ -1,25 +1,37 @@
 // Tiny SFX layer. Buttons opt in via the `btn` helper.
 
 const SRC_PRIMARY = "assets/sfx/primary-button.mp3";
+const SRC_GHOST = "assets/sfx/ghost-button.mp3";
 const VOLUME_PRIMARY = 0.7;
+const VOLUME_GHOST = 0.6;
 
-let primaryTemplate = null;
+const templates = {};
 
-function ensurePrimary() {
-  if (primaryTemplate) return primaryTemplate;
-  primaryTemplate = new Audio(SRC_PRIMARY);
-  primaryTemplate.preload = "auto";
-  return primaryTemplate;
+function ensureTemplate(src) {
+  if (templates[src]) return templates[src];
+  const a = new Audio(src);
+  a.preload = "auto";
+  templates[src] = a;
+  return a;
 }
 
-export function playPrimaryClick() {
+function playClone(src, volume) {
   try {
-    ensurePrimary();
-    const a = primaryTemplate.cloneNode();
-    a.volume = VOLUME_PRIMARY;
+    const tmpl = ensureTemplate(src);
+    const a = tmpl.cloneNode();
+    a.volume = volume;
     const p = a.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
   } catch {
-    // Ignore — audio is non-essential.
+    // Audio is non-essential; ignore.
   }
 }
+
+export function playPrimaryClick() {
+  playClone(SRC_PRIMARY, VOLUME_PRIMARY);
+}
+
+export function playGhostClick() {
+  playClone(SRC_GHOST, VOLUME_GHOST);
+}
+

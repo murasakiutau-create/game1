@@ -1,6 +1,6 @@
 // Tiny DOM helpers for building the UI declaratively.
 
-import { playPrimaryClick } from "./audio.js";
+import { playPrimaryClick, playGhostClick } from "./audio.js";
 
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
@@ -35,9 +35,9 @@ export function btn(label, onClick, opts = {}) {
   if (opts.small) cls.push("small");
   if (opts.block) cls.push("block");
   if (opts.className) cls.push(opts.className);
-  const wantsSfx = opts.sfx === true || (opts.sfx !== false && opts.primary);
-  const handler = wantsSfx
-    ? (e) => { playPrimaryClick(); if (onClick) onClick(e); }
+  const sfx = resolveSfx(opts);
+  const handler = sfx
+    ? (e) => { sfx(); if (onClick) onClick(e); }
     : onClick;
   return h("button", {
     class: cls.join(" "),
@@ -46,6 +46,16 @@ export function btn(label, onClick, opts = {}) {
     disabled: opts.disabled || false,
     "aria-label": opts.ariaLabel,
   }, label);
+}
+
+function resolveSfx(opts) {
+  if (opts.sfx === false) return null;
+  if (opts.sfx === "primary") return playPrimaryClick;
+  if (opts.sfx === "ghost") return playGhostClick;
+  if (opts.sfx === true) return playPrimaryClick;
+  if (opts.primary) return playPrimaryClick;
+  if (opts.ghost || opts.dark) return playGhostClick;
+  return null;
 }
 
 export function panel(title, body, ornament = "❦") {
