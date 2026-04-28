@@ -113,7 +113,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
           pt ? btn("パーティから外す", () => {
             removeAdvFromParties(adv.id);
             refresh();
-          }, { small: true, ghost: true, sfx: false }) : null,
+          }, { small: true, ghost: true }) : null,
         ),
       );
       partyBody.appendChild(card);
@@ -241,7 +241,7 @@ function renderGearTab(adv, rerender) {
       h("div", null, eq ? eq.name : h("span", { class: "muted" }, "（未装備）")),
       h("div", { class: "row", style: { marginTop: "0.5rem" } },
         btn("付け替え", () => openGearPicker(adv, slot, rerender), { small: true, ghost: true, sfx: false }),
-        eq ? btn("外す", () => { gear[slot] = null; rerender(); }, { small: true, ghost: true, sfx: false }) : null,
+        eq ? btn("外す", () => { gear[slot] = null; rerender(); }, { small: true, ghost: true }) : null,
       ),
     ));
   }
@@ -338,7 +338,7 @@ function renderItemsTab(adv, rerender) {
             const ex = state.inventory.items.find(x => x !== state.inventory.items.at(-1) && x.itemId === slot.itemId && x.quality === slot.quality);
             if (ex) { ex.count += 1; state.inventory.items.pop(); }
             rerender();
-          }, { small: true, ghost: true, sfx: false }),
+          }, { small: true, ghost: true }),
         ),
       ));
     } else {
@@ -428,7 +428,7 @@ function renderSpellsTab(adv, rerender) {
         btn("外す", () => {
           state.equippedSpells[adv.id] = equipped.filter(x => x !== sid);
           rerender();
-        }, { small: true, ghost: true, sfx: false }),
+        }, { small: true, ghost: true }),
       ),
     ));
   }
@@ -555,7 +555,7 @@ function renderPassivesTab(adv, rerender) {
             recomputeAdvMaxHp(adv);
             rerender();
           },
-          { small: true, primary: !isOn && slotsLeft > 0, ghost: isOn, disabled: !isOn && slotsLeft <= 0, sfx: false }
+          { small: true, primary: !isOn && slotsLeft > 0, ghost: isOn, disabled: !isOn && slotsLeft <= 0 }
         ),
       ),
     ));
@@ -729,7 +729,7 @@ function renderDispatchTab(adv, onDispatched) {
       removeAdvFromParties(adv.id);
       toast(`${adv.name}をパーティから外しました。`);
       onDispatched();
-    }, { ghost: true, sfx: false }));
+    }, { ghost: true }));
     return wrap;
   }
   // Existing parties (with capacity)
@@ -858,7 +858,7 @@ export function openPartyFormation(refresh) {
               else if (chosenIds.size < PARTY_MAX) chosenIds.add(adv.id);
               else toast(`パーティは最大 ${PARTY_MAX} 名までです。`, { error: true });
               rerender();
-            }, { primary: !sel && !cant, ghost: sel || cant, small: true, disabled: cant, sfx: false }),
+            }, { primary: !sel && !cant, ghost: sel || cant, small: true, disabled: cant }),
           ),
         ));
       }
@@ -915,7 +915,7 @@ function openPartyEditor(pt, refresh) {
               adv.busy = true;
             }
             rerender();
-          }, { primary: !inThis && !cant, ghost: inThis || cant, small: true, disabled: cant, sfx: false }),
+          }, { primary: !inThis && !cant, ghost: inThis || cant, small: true, disabled: cant }),
         ),
       ));
     }
