@@ -36,6 +36,7 @@ export const state = {
     items: [],          // { itemId, quality, count }
   },
   shelf: [],            // { itemId, quality, count, askPrice }
+  shopShelves: 1,       // number of shelves owned (each holds SHELF_TYPES_PER_SHELF entries)
   learnedSpells: {},    // advId -> [spellId]
   equippedSpells: {},   // advId -> [spellId] (<=slot count)
   equippedGear: {},     // advId -> { weapon, armor, trinket }
@@ -249,6 +250,7 @@ export function newGame() {
   state.market = [];
   state.inventory = { mats: {}, items: [] };
   state.shelf = [];
+  state.shopShelves = 1;
   state.learnedSpells = {};
   state.equippedSpells = {};
   state.equippedGear = {};

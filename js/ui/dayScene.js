@@ -6,6 +6,15 @@ import { RECIPES, ITEMS, CATEGORY_LABELS, priceForItem } from "../data/recipes.j
 import { MATERIALS, QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
 import { canCraft, craft, predictCraftQuality } from "../systems/crafting.js";
 import { listOnShelf, unlistFromShelf } from "../systems/shop.js";
+import {
+  SHELF_TYPES_PER_SHELF,
+  shelfTypesMax,
+  shelfTypesUsed,
+  maxShelvesAllowed,
+  nextShelfCost,
+  canBuyShelf,
+  buyShelf,
+} from "../systems/shopExpansion.js";
 import { itemIconKind, iconChip } from "./iconKind.js";
 
 let currentTab = "craft";
@@ -20,13 +29,15 @@ export function renderDayScene(host, { onAdvance, refresh }) {
   ));
 
   wrap.appendChild(tabs([
-    { id: "craft", label: "調合（クラフト）" },
+    { id: "craft", label: "調合" },
     { id: "shop", label: "店頭・棚" },
+    { id: "expand", label: "お店拡張" },
     { id: "stock", label: "在庫" },
   ], currentTab, (id) => { currentTab = id; renderDayScene(host, { onAdvance, refresh }); }));
 
   if (currentTab === "craft") wrap.appendChild(renderCraftTab(refresh));
   else if (currentTab === "shop") wrap.appendChild(renderShopTab(refresh));
+  else if (currentTab === "expand") wrap.appendChild(renderShopExpansionTab(refresh));
   else wrap.appendChild(renderStockTab());
 
   wrap.appendChild(panel("",
@@ -101,7 +112,7 @@ function renderCraftTab(refresh) {
           if (!res.ok) toast(res.reason, { error: true });
           else toast(`${ITEMS[res.itemId].name}（${QUALITY_LABEL[res.quality]}）を調合した。`);
           refresh();
-        }, { primary: ok, small: true, disabled: !ok }),
+        }, { primary: ok, small: true, disabled: !ok, sfx: "primary" }),
       ),
     ));
   }
@@ -111,6 +122,12 @@ function renderCraftTab(refresh) {
 
 function renderShopTab(refresh) {
   const wrap = h("div", { class: "stack" });
+
+  // Header with shelf-capacity readout.
+  const used = shelfTypesUsed();
+  const cap = shelfTypesMax();
+  wrap.appendChild(h("p", { class: "muted" },
+    `棚の使用：${used} / ${cap} 種（棚 ${state.shopShelves} 個 × ${SHELF_TYPES_PER_SHELF}）`));
 
   // Inventory items that can be listed
   const sellableItems = state.inventory.items.filter(it => {
@@ -145,13 +162,25 @@ function renderShopTab(refresh) {
       ),
       h("div", { class: "row" },
         btn("棚に並べる(1)", () => {
-          listOnShelf(it.itemId, it.quality, 1, readPrice());
+          const r = listOnShelf(it.itemId, it.quality, 1, readPrice());
+          if (!r.ok) {
+            toast(r.reason === "shelf-full"
+              ? `棚が満杯です（最大 ${shelfTypesMax()} 種）。お店拡張で増やせます。`
+              : "並べられませんでした。", { error: true });
+            return;
+          }
           removeItem(it.itemId, it.quality, 1);
           refresh();
         }, { primary: true, small: true }),
         it.count >= 5 ? btn("5個並べる", () => {
           const price = readPrice();
-          listOnShelf(it.itemId, it.quality, 5, price);
+          const r = listOnShelf(it.itemId, it.quality, 5, price);
+          if (!r.ok) {
+            toast(r.reason === "shelf-full"
+              ? `棚が満杯です（最大 ${shelfTypesMax()} 種）。お店拡張で増やせます。`
+              : "並べられませんでした。", { error: true });
+            return;
+          }
           for (let i = 0; i < 5; i++) removeItem(it.itemId, it.quality, 1);
           refresh();
         }, { ghost: true, small: true }) : null,
@@ -186,6 +215,61 @@ function renderShopTab(refresh) {
   wrap.appendChild(panel("店頭の棚", shelf, "✦"));
 
   return wrap;
+}
+
+function renderShopExpansionTab(refresh) {
+  const used = shelfTypesUsed();
+  const cap = shelfTypesMax();
+  const tierMax = maxShelvesAllowed();
+  const cost = nextShelfCost();
+  const check = canBuyShelf();
+
+  const body = h("div", { class: "stack" },
+    h("p", { class: "muted" },
+      "金貨を払って棚を増やすと、店頭に並べられる商品の種類が増えます。" +
+      "棚 1 個につき " + SHELF_TYPES_PER_SHELF + " 種類まで陳列できます。"),
+    h("div", { class: "parchment-card" },
+      h("div", { class: "row between" },
+        h("strong", null, "現在の店"),
+        h("span", { class: "tag gold" }, `棚 ${state.shopShelves} 個`),
+      ),
+      h("div", { class: "muted" }, `陳列容量：${used} / ${cap} 種類`),
+      h("div", { class: "muted" }, `名声段階での上限：棚 ${tierMax} 個（${tierMax * SHELF_TYPES_PER_SHELF} 種類）`),
+    ),
+    h("div", { class: "parchment-card" },
+      h("div", { class: "row between" },
+        h("strong", null, state.shopShelves >= tierMax ? "上限到達" : `棚を増設（次は ${state.shopShelves + 1} 個目）`),
+        cost != null && state.shopShelves < tierMax
+          ? h("span", { class: "tag" }, `${cost.toLocaleString()} G`)
+          : null,
+      ),
+      state.shopShelves >= tierMax
+        ? h("p", { class: "muted" },
+            "現在の名声段階ではこれ以上棚を増やせません。名声を上げて再来訪してください。")
+        : h("p", { class: "muted" },
+            `増設後の容量：${(state.shopShelves + 1) * SHELF_TYPES_PER_SHELF} 種類。`),
+      h("div", { class: "row" },
+        btn(state.shopShelves >= tierMax
+              ? "名声不足" : (cost != null && state.gold < cost ? "金貨不足" : "棚を増設する"),
+          () => {
+            const res = buyShelf();
+            if (!res.ok) {
+              toast(
+                res.reason === "tier" ? "名声段階の上限に達しています。" :
+                res.reason === "gold" ? "金貨が足りません。" :
+                "増設できません。",
+                { error: true },
+              );
+              return;
+            }
+            toast(`棚を増設しました（${res.cost.toLocaleString()} G）。現在 ${res.shelves} 個。`);
+            refresh();
+          },
+          { primary: check.ok, ghost: !check.ok, disabled: !check.ok, sfx: "plain" }),
+      ),
+    ),
+  );
+  return panel("お店拡張", body, "❖");
 }
 
 function priceField(shelfEntry, refresh) {

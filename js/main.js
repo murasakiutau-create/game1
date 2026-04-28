@@ -8,10 +8,11 @@ import { renderDayScene } from "./ui/dayScene.js";
 import { renderEveningScene } from "./ui/eveningScene.js";
 import { renderNightScene } from "./ui/nightScene.js";
 import { openLogViewer } from "./ui/logScene.js";
-import { openPartyViewer } from "./ui/partyViewer.js";
-import { openMarketViewer } from "./ui/marketViewer.js";
+import { openQuestBoard } from "./ui/questBoard.js";
+import { openShopViewer } from "./ui/shopViewer.js";
 import { advancePhase, refreshMarket } from "./systems/time.js";
 import { refreshQuests } from "./systems/quests.js";
+import { ensureShopShelves } from "./systems/shopExpansion.js";
 import { toast } from "./ui/components.js";
 import { startBgm } from "./ui/bgm.js";
 import { mountSettingsButton } from "./ui/settingsButton.js";
@@ -42,12 +43,14 @@ function render() {
   renderShell(root, scene, {
     openLogs: () => openLogViewer(),
     gotoTitle: () => { mode = "title"; render(); },
-    openParty: () => openPartyViewer(render),
-    openMarket: () => openMarketViewer(render),
+    openQuests: () => openQuestBoard(render),
+    openShop: () => openShopViewer(),
   });
 }
 
 function ensurePostStart() {
+  // Migrate older saves that predate state.shopShelves.
+  ensureShopShelves();
   // First time the game enters play mode after a new game / load:
   // make sure there's a market and quest board on day 1.
   if (state.market.length === 0 && state.phase === "morning") {

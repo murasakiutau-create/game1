@@ -143,6 +143,40 @@ export function onDispatchResolved(result) {
   checkCompletions();
 }
 
+// Hand in items from inventory toward a deliver/specialty quest. Returns
+// { ok: true, completed } on success, { ok: false, reason } on rejection.
+export function deliverFromInventory(qid, itemId, quality) {
+  ensureShape();
+  const q = state.quests.active.find(x => x.id === qid);
+  if (!q) return { ok: false, reason: "missing" };
+  if (q.kind !== "deliver" && q.kind !== "specialty") return { ok: false, reason: "wrong-kind" };
+  if (!matchesDeliverSpec(q, itemId, quality)) return { ok: false, reason: "no-match" };
+  const ex = state.inventory.items.find(it => it.itemId === itemId && it.quality === quality);
+  if (!ex || ex.count < 1) return { ok: false, reason: "no-stock" };
+  ex.count -= 1;
+  if (ex.count <= 0) state.inventory.items = state.inventory.items.filter(x => x !== ex);
+  q.progress = Math.min((q.spec.count || 1), (q.progress || 0) + 1);
+  const item = ITEMS[itemId];
+  pushLog({ kind: "system", summary: `「${q.title}」に${item?.name || itemId}を1個納品（${q.progress}/${q.spec.count || 1}）。` });
+  const finishedNow = q.progress >= (q.spec.count || 1);
+  checkCompletions();
+  return { ok: true, completed: finishedNow };
+}
+
+// Same accept-rules as the sale path, used to vet a manual hand-in.
+export function matchesDeliverSpec(q, itemId, quality) {
+  const item = ITEMS[itemId];
+  if (!item) return false;
+  const spec = q.spec || {};
+  if (spec.itemId && spec.itemId !== itemId) return false;
+  if (spec.category && spec.category !== item.cat) return false;
+  if (spec.minQuality) {
+    const idx = QUALITY_LEVELS.indexOf(quality);
+    if (idx < QUALITY_LEVELS.indexOf(spec.minQuality)) return false;
+  }
+  return true;
+}
+
 function checkCompletions() {
   const finished = [];
   state.quests.active = state.quests.active.filter(q => {

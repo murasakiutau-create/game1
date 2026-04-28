@@ -903,7 +903,7 @@ function openPartyEditor(pt, refresh) {
         advSummary(adv),
         h("div", { class: "muted", style: { marginTop: "0.3rem" } },
           adv.injured ? "重傷" : inOther ? "別パーティに所属中" : inThis ? "在籍中" : "未配属"),
-        h("div", { class: "row", style: { marginTop: "0.4rem" } },
+        h("div", { class: "row", style: { marginTop: "0.4rem", flexWrap: "wrap", gap: "0.3rem" } },
           btn(inThis ? "外す" : "加える", () => {
             if (inThis) {
               pt.advIds = pt.advIds.filter(id => id !== adv.id);
@@ -916,6 +916,7 @@ function openPartyEditor(pt, refresh) {
             }
             rerender();
           }, { primary: !inThis && !cant, ghost: inThis || cant, small: true, disabled: cant }),
+          btn("詳細・編集", () => openAdventurerSheet(adv, rerender), { ghost: true, small: true }),
         ),
       ));
     }

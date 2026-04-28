@@ -30,10 +30,10 @@ export function renderShell(root, sceneEl, navHandlers) {
   const sceneHost = h("main", { class: "scene", id: "scene-host" }, sceneEl);
 
   const bottomTabs = h("nav", { class: "bottom-tabs", role: "navigation" },
-    bottomBtn("title",   "title",  "タイトル", navHandlers.gotoTitle),
-    bottomBtn("logs",    "logs",   "記録",     navHandlers.openLogs),
-    bottomBtn("party",   "party",  "冒険者",   navHandlers.openParty),
-    bottomBtn("market",  "market", "雇用",     navHandlers.openMarket),
+    bottomBtn("title",  "title",  "タイトル", navHandlers.gotoTitle),
+    bottomBtn("logs",   "logs",   "記録",     navHandlers.openLogs),
+    bottomBtn("quests", "quests", "依頼",     navHandlers.openQuests),
+    bottomBtn("shop",   "shop",   "店",       navHandlers.openShop),
   );
 
   root.appendChild(h("div", { class: "shell" }, hud, sceneHost, bottomTabs));

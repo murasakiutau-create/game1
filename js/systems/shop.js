@@ -8,17 +8,23 @@ import { CUSTOMER_TYPES, POOL_BY_TIER, CUSTOMERS_PER_DAY_BY_TIER } from "../data
 import { QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
 import { pushLog } from "./log.js";
 import { onSale as questsOnSale } from "./quests.js";
+import { shelfTypesMax } from "./shopExpansion.js";
 
 // Place an item from inventory onto the shelf with a posted price.
+// Returns { ok, reason? }. New (itemId, quality) entries respect the
+// shelf-types cap (state.shopShelves * SHELF_TYPES_PER_SHELF).
 export function listOnShelf(itemId, quality, count = 1, askPrice = null) {
   const item = ITEMS[itemId];
-  if (!item) return false;
+  if (!item) return { ok: false, reason: "unknown" };
   const ex = state.shelf.find(s => s.itemId === itemId && s.quality === quality);
   const defaultPrice = priceForItem(itemId, quality);
   const price = askPrice == null ? defaultPrice : Math.max(1, askPrice | 0);
-  if (ex) { ex.count += count; ex.askPrice = price; }
-  else state.shelf.push({ itemId, quality, count, askPrice: price });
-  return true;
+  if (ex) { ex.count += count; ex.askPrice = price; return { ok: true }; }
+  if (state.shelf.length >= shelfTypesMax()) {
+    return { ok: false, reason: "shelf-full" };
+  }
+  state.shelf.push({ itemId, quality, count, askPrice: price });
+  return { ok: true };
 }
 
 export function unlistFromShelf(itemId, quality, count = 1) {

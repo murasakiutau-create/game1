@@ -4,7 +4,8 @@
 
 import { h, btn, modal, panel, confirmModal, toast } from "./components.js";
 import { state } from "../state.js";
-import { acceptQuest, cancelQuest, MAX_ACTIVE_QUESTS } from "../systems/quests.js";
+import { acceptQuest, cancelQuest, deliverFromInventory, matchesDeliverSpec, MAX_ACTIVE_QUESTS } from "../systems/quests.js";
+import { state } from "../state.js";
 import { MONSTERS } from "../data/monsters.js";
 import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
 import { ITEMS, CATEGORY_LABELS } from "../data/recipes.js";
@@ -66,20 +67,22 @@ export function openQuestBoard(refresh) {
     if (active.length > 0) {
       const sec = h("div", { class: "stack" });
       for (const q of active) {
-        sec.appendChild(questCard(q, {
-          isActive: true,
-          actions: [
-            btn("辞退", () => {
-              confirmModal({
-                title: "依頼の辞退",
-                message: `「${q.title}」を辞退します。`,
-                confirmLabel: "辞退する",
-                danger: true,
-                onConfirm: () => { cancelQuest(q.id); rerender(); refresh && refresh(); },
-              });
-            }, { ghost: true, small: true }),
-          ],
-        }));
+        const isDeliverable = q.kind === "deliver" || q.kind === "specialty";
+        const actions = [];
+        if (isDeliverable) {
+          actions.push(btn("納品する", () => openDeliveryPicker(q, () => { rerender(); refresh && refresh(); }),
+            { primary: true, small: true }));
+        }
+        actions.push(btn("辞退", () => {
+          confirmModal({
+            title: "依頼の辞退",
+            message: `「${q.title}」を辞退します。`,
+            confirmLabel: "辞退する",
+            danger: true,
+            onConfirm: () => { cancelQuest(q.id); rerender(); refresh && refresh(); },
+          });
+        }, { ghost: true, small: true }));
+        sec.appendChild(questCard(q, { isActive: true, actions }));
       }
       body.appendChild(panel(`受託中（${active.length}/${MAX_ACTIVE_QUESTS}）`, sec, "✦"));
     }
@@ -113,6 +116,53 @@ export function openQuestBoard(refresh) {
   }
   rerender();
   modal(body, { title: "依頼掲示板" });
+}
+
+function openDeliveryPicker(q, onDelivered) {
+  const body = h("div", { class: "stack" });
+  function rerender() {
+    body.innerHTML = "";
+    const remaining = (q.spec.count || 1) - (q.progress || 0);
+    body.appendChild(h("p", null,
+      `「${q.title}」の進捗：${q.progress || 0} / ${q.spec.count || 1}　（残り ${remaining} 個）`));
+    body.appendChild(h("p", { class: "muted" }, q.spec.minQuality
+      ? `条件：${QUALITY_LABEL[q.spec.minQuality]} 以上の品が必要。`
+      : "条件：種類が一致すれば品質は問いません。"));
+
+    const matching = (state.inventory.items || []).filter(it => matchesDeliverSpec(q, it.itemId, it.quality));
+    if (matching.length === 0) {
+      body.appendChild(h("p", { class: "muted" }, "在庫に該当する品がありません。"));
+    }
+    const grid = h("div", { class: "card-grid" });
+    for (const it of matching) {
+      const item = ITEMS[it.itemId];
+      grid.appendChild(h("div", { class: "parchment-card" },
+        h("div", { class: "row between" },
+          h("strong", null, item?.name || it.itemId, " ",
+            h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
+          h("span", null, `×${it.count}`),
+        ),
+        h("div", { class: "row" },
+          btn("1個 納品", () => {
+            const r = deliverFromInventory(q.id, it.itemId, it.quality);
+            if (!r.ok) { toast("納品できませんでした。", { error: true }); return; }
+            if (r.completed) {
+              toast(`「${q.title}」を達成！報酬 ${q.gold} G・名声+${q.rep}。`);
+              m.close();
+              onDelivered && onDelivered();
+              return;
+            }
+            toast(`${item?.name || it.itemId} を1個納品。`);
+            rerender();
+            onDelivered && onDelivered();
+          }, { primary: true, small: true }),
+        ),
+      ));
+    }
+    body.appendChild(grid);
+  }
+  rerender();
+  const m = modal(body, { title: `納品 — ${q.title}` });
 }
 
 export function renderQuestBoardSummary(refresh) {
