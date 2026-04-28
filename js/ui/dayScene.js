@@ -127,7 +127,7 @@ function renderShopTab(refresh) {
   const used = shelfTypesUsed();
   const cap = shelfTypesMax();
   wrap.appendChild(h("p", { class: "muted" },
-    `陳列中：${used} / ${cap} 種類（棚 ${state.shopShelves} 個 × ${SHELF_TYPES_PER_SHELF} 種）。同じ品は1つの枠に何個でも積めます。`));
+    `${used} / ${cap} 種類`));
 
   // Inventory items that can be listed
   const sellableItems = state.inventory.items.filter(it => {
