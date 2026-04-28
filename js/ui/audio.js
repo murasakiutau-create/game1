@@ -1,5 +1,7 @@
 // Tiny SFX layer. Buttons opt in via the `btn` helper.
 
+import { SETTINGS } from "./settings.js";
+
 const SRC_PRIMARY = "assets/sfx/primary-button.mp3";
 const SRC_GHOST = "assets/sfx/ghost-button.mp3";
 const SRC_PLAIN = "assets/sfx/plain-button.mp3";
@@ -18,6 +20,7 @@ function ensureTemplate(src) {
 }
 
 function playClone(src, volume) {
+  if (!SETTINGS.seEnabled) return;
   try {
     const tmpl = ensureTemplate(src);
     const a = tmpl.cloneNode();

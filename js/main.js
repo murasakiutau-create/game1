@@ -13,8 +13,13 @@ import { openMarketViewer } from "./ui/marketViewer.js";
 import { advancePhase, refreshMarket } from "./systems/time.js";
 import { refreshQuests } from "./systems/quests.js";
 import { toast } from "./ui/components.js";
+import { initBgm } from "./ui/bgm.js";
+import { mountSettingsButton } from "./ui/settingsButton.js";
 
 const root = document.getElementById("app");
+
+mountSettingsButton();
+initBgm();
 
 let mode = "title"; // "title" | "play"
 
