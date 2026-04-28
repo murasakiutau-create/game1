@@ -5,7 +5,6 @@
 import { h, btn, modal, panel, confirmModal, toast } from "./components.js";
 import { state } from "../state.js";
 import { acceptQuest, cancelQuest, deliverFromInventory, matchesDeliverSpec, MAX_ACTIVE_QUESTS } from "../systems/quests.js";
-import { state } from "../state.js";
 import { MONSTERS } from "../data/monsters.js";
 import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
 import { ITEMS, CATEGORY_LABELS } from "../data/recipes.js";
