@@ -24,8 +24,9 @@ export async function renderTitle(ctx: AppContext): Promise<void> {
         className: 'title-art',
         text: `
         ╭───────────╮
-        │  🜲  🝳  🜍  │
-        │   調合の釜    │
+        │           │
+        │  調合の釜  │
+        │           │
         ╰───────────╯`,
       }),
     ]),

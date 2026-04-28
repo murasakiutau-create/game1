@@ -19,9 +19,9 @@ export function renderTown(ctx: AppContext): void {
         className: 'ascii-bg',
         text: `
    |~~~~~~~|       _____
-   | 釜🜲 |       |     |
-   |     |       | 寝台 |
-   |_____|       |_____|
+   |  釜  |        |     |
+   |     |        | 寝台 |
+   |_____|        |_____|
    ~~~~~~~~~~~~~~~~~~~~~~`,
       }),
       el('p', { text: '湯気がかすかに立ち上る。HPは全回復した。' }),
@@ -39,7 +39,7 @@ export function renderTown(ctx: AppContext): void {
   main.appendChild(status);
 
   const actions = el('div', { className: 'town-actions' }, [
-    button('🜲 調合する', () => ctx.goto({ kind: 'workshop' }), { className: 'btn-primary big' }),
+    button('🧪 調合する', () => ctx.goto({ kind: 'workshop' }), { className: 'btn-primary big' }),
     button('🛒 ショップ', () => ctx.goto({ kind: 'shop' }), { className: 'big' }),
     button('🎒 持ち物', () => ctx.goto({ kind: 'inventory' }), { className: 'big' }),
     button('⚔ ロードアウト', () => ctx.goto({ kind: 'loadout' }), { className: 'big' }),

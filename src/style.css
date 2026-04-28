@@ -68,6 +68,8 @@ html, body {
   padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: 6px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .screen-title {
@@ -91,6 +93,8 @@ h1.screen-title { font-size: 22px; }
   border: 1px solid var(--line);
   margin: 8px auto;
   display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .breadcrumb {
@@ -416,6 +420,9 @@ h1.screen-title { font-size: 22px; }
   color: var(--warn);
   margin: 4px auto;
   display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: clamp(10px, 2.6vw, 14px);
 }
 
 .hp-bar {
@@ -522,3 +529,64 @@ h1.screen-title { font-size: 22px; }
 }
 
 .enemy-preview { display: flex; flex-direction: column; gap: 2px; }
+
+/* === スマホ対応（〜640px） === */
+@media (max-width: 640px) {
+  html, body { font-size: 14px; }
+  #app { padding: 10px 8px; }
+
+  .title-main { font-size: 22px; letter-spacing: 0.05em; }
+  .title-sub { font-size: 13px; }
+  .title-art { font-size: 12px; padding: 8px 10px; }
+  .ascii-bg { font-size: 11px; padding: 6px 8px; }
+
+  /* グリッド系：1列に畳む */
+  .slots,
+  .town-actions,
+  .eq-list,
+  .skill-pool,
+  .gear-grid,
+  .skill-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* スキルスロット・素材は2列で密度を保つ */
+  .skill-slots { grid-template-columns: repeat(2, 1fr); }
+  .mat-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+
+  /* 調合スロットは縦並びに */
+  .craft-slots { flex-direction: column; align-items: stretch; gap: 6px; }
+  .craft-slot { min-width: 0; width: 100%; }
+  .craft-plus { text-align: center; }
+
+  /* タッチターゲットを44px相当へ */
+  .btn { min-height: 44px; padding: 10px 14px; font-size: 15px; }
+  .big { padding: 14px 16px; font-size: 16px; min-height: 48px; }
+  .small { min-height: 32px; padding: 6px 10px; font-size: 12px; }
+
+  /* iOS のフォーカス時自動ズーム防止（16px必須） */
+  textarea, input, select { font-size: 16px; }
+  .sell-row input { width: 64px; }
+
+  /* パネル内側余白を圧縮 */
+  .panel { padding: 12px; }
+
+  /* 戦闘画面ログを少し短く */
+  .battle-log { max-height: 180px; font-size: 12px; }
+
+  /* ステータスバーは折り返しで縦に伸びる */
+  .status-bar { gap: 6px 12px; padding: 8px 10px; font-size: 13px; }
+
+  /* breadcrumb 行で戻るボタンとタイトルが重ならないよう */
+  .breadcrumb h1.screen-title { font-size: 18px; }
+
+  /* モーダルの余白 */
+  .modal { padding: 12px; }
+}
+
+@media (max-width: 380px) {
+  /* さらに細い端末：素材グリッドも1列許容 */
+  .mat-grid { grid-template-columns: 1fr; }
+  .skill-slots { grid-template-columns: 1fr; }
+}

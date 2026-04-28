@@ -21,7 +21,7 @@ export function renderWorkshop(ctx: AppContext): void {
 
   main.appendChild(el('div', { className: 'breadcrumb' }, [
     button('← 拠点に戻る', () => ctx.goto({ kind: 'town' })),
-    el('h1', { text: '🜲 調合', className: 'screen-title' }),
+    el('h1', { text: '🧪 調合', className: 'screen-title' }),
   ]));
 
   // 選択スロット
@@ -37,7 +37,7 @@ export function renderWorkshop(ctx: AppContext): void {
   // 実行ボタン
   const canCraft = ui.selA && ui.selB && ui.element;
   const execRow = el('div', { className: 'row' }, [
-    button('🜂 調合する', async () => {
+    button('🧪 調合する', async () => {
       if (!canCraft) return;
       const r = craft(p, ui.selA!, ui.selB!, ui.element!);
       if ('error' in r) {
