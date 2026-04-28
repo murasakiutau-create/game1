@@ -125,9 +125,9 @@ function renderShopTab(refresh) {
 
   // Header with shelf-capacity readout.
   const used = shelfTypesUsed();
-  const cap = shelfTypesMax();
+  const tierMaxTypes = maxShelvesAllowed() * SHELF_TYPES_PER_SHELF;
   wrap.appendChild(h("p", { class: "muted" },
-    `${used} / ${cap} 種類`));
+    `${used} / ${tierMaxTypes} 種類`));
 
   // Inventory items that can be listed
   const sellableItems = state.inventory.items.filter(it => {
