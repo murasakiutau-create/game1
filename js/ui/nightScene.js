@@ -104,6 +104,7 @@ function renderSlotCard(id, data, refresh) {
               title: `スロット ${id} を上書き`,
               message: `第${meta.day}日（${formatSavedAt(meta.savedAt)}）の記録を上書きします。よろしいですか？`,
               confirmLabel: "上書きする",
+              confirmSfx: "primary",
               onConfirm: async () => {
                 await writeSlot(id);
                 toast(`スロット ${id} に保存しました。`);

@@ -112,10 +112,11 @@ export function modal(content, opts = {}) {
 }
 
 // Confirm dialog
-export function confirmModal({ title = "確認", message = "", confirmLabel = "実行", cancelLabel = "やめる", onConfirm, danger = false }) {
+export function confirmModal({ title = "確認", message = "", confirmLabel = "実行", cancelLabel = "やめる", onConfirm, danger = false, confirmSfx }) {
   const box = h("div", null, h("p", null, message));
   const cancel = btn(cancelLabel, () => m.close(), { ghost: true });
-  const ok = btn(confirmLabel, () => { m.close(); onConfirm && onConfirm(); }, { primary: true, className: danger ? "primary" : "" });
+  const ok = btn(confirmLabel, () => { m.close(); onConfirm && onConfirm(); },
+    { primary: true, className: danger ? "primary" : "", sfx: confirmSfx });
   const m = modal(box, { title, foot: [cancel, ok] });
 }
 

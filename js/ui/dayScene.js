@@ -54,7 +54,7 @@ function renderCraftTab(refresh) {
     btn(craftFilterCraftableOnly ? "✓ 作れるものだけ" : "作れるものだけ", () => {
       craftFilterCraftableOnly = !craftFilterCraftableOnly;
       refresh();
-    }, { small: true, primary: craftFilterCraftableOnly, ghost: !craftFilterCraftableOnly }),
+    }, { small: true, primary: craftFilterCraftableOnly, ghost: !craftFilterCraftableOnly, sfx: "plain" }),
     h("span", { class: "muted" },
       craftFilterCraftableOnly
         ? `${recipes.length} / ${all.length} 件表示中`
