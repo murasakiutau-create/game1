@@ -240,7 +240,7 @@ function renderGearTab(adv, rerender) {
       ),
       h("div", null, eq ? eq.name : h("span", { class: "muted" }, "（未装備）")),
       h("div", { class: "row", style: { marginTop: "0.5rem" } },
-        btn("付け替え", () => openGearPicker(adv, slot, rerender), { small: true, ghost: true, sfx: false }),
+        btn("付け替え", () => openGearPicker(adv, slot, rerender), { small: true, ghost: true, sfx: "plain" }),
         eq ? btn("外す", () => { gear[slot] = null; rerender(); }, { small: true, ghost: true }) : null,
       ),
     ));
@@ -330,7 +330,7 @@ function renderItemsTab(adv, rerender) {
         ),
         h("p", { class: "muted" }, item?.blurb || ""),
         h("div", { class: "row", style: { marginTop: "0.5rem" } },
-          btn("付け替え", () => openItemPicker(adv, i, rerender), { small: true, ghost: true, sfx: false }),
+          btn("付け替え", () => openItemPicker(adv, i, rerender), { small: true, ghost: true, sfx: "plain" }),
           btn("外す", () => {
             // Return the held item to inventory.
             slots.splice(i, 1);
