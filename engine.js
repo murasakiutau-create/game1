@@ -744,115 +744,122 @@ function doExamineBoard() {
 }
 
 // ── 自分自身コマンド ──────────────────────────────────────────
+// 各コマンドに locs を付与。'any' または現在地を含むものだけ表示される。
+// これにより「場所によってできる行動が変わる」を実現する。
 function buildSelfCommands() {
-  return [
-    // 食事・飲み物
-    {label:'パンを食べる',     color:'item',   fn:()=>doEatBread()},
-    {label:'エールを飲む',     color:'item',   fn:()=>doDrinkAle()},
-    {label:'回復薬を飲む',     color:'item',   fn:()=>doUsePotion()},
-    // 戦闘・危険
-    {label:'自傷する',         color:'combat', fn:()=>doSelfHarm()},
-    {label:'自害する',         color:'combat', fn:()=>doSuicide()},
-    // スキル練習
-    {label:'身体を鍛える',     color:'skill',  fn:()=>doExercise()},
-    {label:'魔法を練習する',   color:'skill',  fn:()=>doPracticeMagic()},
-    {label:'リュートを練習する',color:'skill', fn:()=>doPracticeLute()},
-    {label:'料理を練習する',   color:'skill',  fn:()=>doPracticeCook()},
-    {label:'窃盗を練習する',   color:'skill',  fn:()=>doPracticeTheft()},
-    {label:'解剖を練習する',   color:'skill',  fn:()=>doPracticeAnatomy()},
-    {label:'弁舌を練習する',   color:'skill',  fn:()=>doPracticeSpeech()},
-    {label:'鍛冶を練習する',   color:'skill',  fn:()=>doPracticeSmith()},
+  const all=[
+    // 食事・飲み物（どこでも）
+    {label:'パンを食べる',     color:'item',   locs:'any', fn:()=>doEatBread()},
+    {label:'エールを飲む',     color:'item',   locs:'any', fn:()=>doDrinkAle()},
+    {label:'回復薬を飲む',     color:'item',   locs:'any', fn:()=>doUsePotion()},
+    // 戦闘・危険（どこでも）
+    {label:'自傷する',         color:'combat', locs:'any', fn:()=>doSelfHarm()},
+    {label:'自害する',         color:'combat', locs:'any', fn:()=>doSuicide()},
+    // スキル練習（基本は宿屋。一部は場所に応じて）
+    {label:'身体を鍛える',     color:'skill',  locs:['inn','forest'], fn:()=>doExercise()},
+    {label:'魔法を練習する',   color:'skill',  locs:['inn','forest'], fn:()=>doPracticeMagic()},
+    {label:'リュートを練習する',color:'skill', locs:['inn','tavern'], fn:()=>doPracticeLute()},
+    {label:'料理を練習する',   color:'skill',  locs:['inn'],          fn:()=>doPracticeCook()},
+    {label:'窃盗を練習する',   color:'skill',  locs:['inn','alley'],  fn:()=>doPracticeTheft()},
+    {label:'解剖を練習する',   color:'skill',  locs:['inn'],          fn:()=>doPracticeAnatomy()},
+    {label:'弁舌を練習する',   color:'skill',  locs:['inn','tavern'], fn:()=>doPracticeSpeech()},
+    {label:'鍛冶を練習する',   color:'skill',  locs:['inn'],          fn:()=>doPracticeSmith()},
     // 信仰・精神
-    {label:'瞑想する',         color:'faith',  fn:()=>doMeditate()},
-    {label:'一人で神に祈る',   color:'faith',  fn:()=>doPrayAlone()},
-    // 基本行動
-    {label:'休憩する',         color:'dim',    fn:()=>doRest()},
-    {label:'眠る',             color:'dim',    fn:()=>doSleep()},
-    {label:'周囲を見回す',     color:'dim',    fn:()=>doLookAround()},
-    {label:'日記を書く',       color:'dim',    fn:()=>doWriteDiary()},
-    {label:'所持金を数える',   color:'dim',    fn:()=>doCountGold()},
-    // 社会行動
-    {label:'大声で叫ぶ',       color:'result', fn:()=>doShout()},
-    {label:'コインを投げる',   color:'item',   fn:()=>doTossCoin()},
-    {label:'落ちているものを拾う',color:'dim', fn:()=>doPickup()},
-    {label:'大声で歌う',       color:'skill',  fn:()=>doSingInStreet(true)},
-    {label:'踊る',             color:'skill',  fn:()=>doDance()},
-    {label:'演説する',         color:'skill',  fn:()=>doSpeech(hasItem('microphone'))},
-    {label:'通行人にぶつかる', color:'crime',  fn:()=>doBumpIntoStranger()},
-    {label:'人混みでスリ',     color:'crime',  fn:()=>doPickpocketCrowd()},
+    {label:'瞑想する',         color:'faith',  locs:['inn','church','forest'], fn:()=>doMeditate()},
+    {label:'一人で神に祈る',   color:'faith',  locs:['inn','church'],          fn:()=>doPrayAlone()},
+    // 基本行動（休む系は宿屋メイン）
+    {label:'休憩する',         color:'dim',    locs:['inn','tavern'], fn:()=>doRest()},
+    {label:'眠る',             color:'dim',    locs:['inn'],          fn:()=>doSleep()},
+    {label:'周囲を見回す',     color:'dim',    locs:'any',            fn:()=>doLookAround()},
+    {label:'日記を書く',       color:'dim',    locs:['inn'],          fn:()=>doWriteDiary()},
+    {label:'所持金を数える',   color:'dim',    locs:'any',            fn:()=>doCountGold()},
+    // 社会行動（人通りのある場所）
+    {label:'大声で叫ぶ',       color:'result', locs:['street','market'],          fn:()=>doShout()},
+    {label:'コインを投げる',   color:'item',   locs:'any',                        fn:()=>doTossCoin()},
+    {label:'落ちているものを拾う',color:'dim', locs:['street','market','alley','forest'], fn:()=>doPickup()},
+    {label:'大声で歌う',       color:'skill',  locs:['street','market','tavern'], fn:()=>doSingInStreet(true)},
+    {label:'踊る',             color:'skill',  locs:['street','market','tavern'], fn:()=>doDance()},
+    {label:'演説する',         color:'skill',  locs:['street'],                   fn:()=>doSpeech(hasItem('microphone'))},
+    {label:'通行人にぶつかる', color:'crime',  locs:['street','market'],          fn:()=>doBumpIntoStranger()},
+    {label:'人混みでスリ',     color:'crime',  locs:['street','market'],          fn:()=>doPickpocketCrowd()},
     // ゴミ
-    {label:'ゴミを拾う',       color:'good',   fn:()=>doPickupTrash()},
-    {label:'ゴミを捨てる',     color:'crime',  fn:()=>doThrowTrash()},
-    {label:'ゴミを燃やす',     color:'crime',  fn:()=>doBurnTrash()},
-    {label:'ゴミ箱に捨てる',   color:'good',   fn:()=>doPutTrashInBin()},
-    // 服装
-    {label:'上着を脱ぐ',       color:'dim',    fn:()=>doUndress('upper')},
-    {label:'ズボンを脱ぐ',     color:'dim',    fn:()=>doUndress('lower')},
-    {label:'靴を脱ぐ',         color:'dim',    fn:()=>doUndress('feet')},
-    {label:'帽子を脱ぐ',       color:'dim',    fn:()=>doUndress('head')},
-    {label:'手袋を脱ぐ',       color:'dim',    fn:()=>doUndress('hands')},
-    {label:'物乞いをする',     color:'crime',  fn:()=>doBeg()},
-    {label:'全裸で歩く',       color:'crime',  fn:()=>doWalkNaked()},
+    {label:'ゴミを拾う',       color:'good',   locs:['street','market','alley'], fn:()=>doPickupTrash()},
+    {label:'ゴミを捨てる',     color:'crime',  locs:['street','market','alley'], fn:()=>doThrowTrash()},
+    {label:'ゴミを燃やす',     color:'crime',  locs:['street','alley'],          fn:()=>doBurnTrash()},
+    {label:'ゴミ箱に捨てる',   color:'good',   locs:['street','market'],         fn:()=>doPutTrashInBin()},
+    // 服装（どこでも）
+    {label:'上着を脱ぐ',       color:'dim',    locs:'any', fn:()=>doUndress('upper')},
+    {label:'ズボンを脱ぐ',     color:'dim',    locs:'any', fn:()=>doUndress('lower')},
+    {label:'靴を脱ぐ',         color:'dim',    locs:'any', fn:()=>doUndress('feet')},
+    {label:'帽子を脱ぐ',       color:'dim',    locs:'any', fn:()=>doUndress('head')},
+    {label:'手袋を脱ぐ',       color:'dim',    locs:'any', fn:()=>doUndress('hands')},
+    {label:'物乞いをする',     color:'crime',  locs:['street','market'],          fn:()=>doBeg()},
+    {label:'全裸で歩く',       color:'crime',  locs:['street','market','alley'], fn:()=>doWalkNaked()},
     // トイレ
-    {label:'公衆トイレに行く', color:'dim',    fn:()=>doToiletPublic()},
-    {label:'路地裏で用を足す', color:'crime',  fn:()=>doToiletOutdoorHidden()},
-    {label:'街中で堂々と用を足す',color:'crime',fn:()=>doToiletOutdoorPublic()},
+    {label:'公衆トイレに行く', color:'dim',    locs:['street','market','tavern','guild'], fn:()=>doToiletPublic()},
+    {label:'路地裏で用を足す', color:'crime',  locs:['alley'],                            fn:()=>doToiletOutdoorHidden()},
+    {label:'街中で堂々と用を足す',color:'crime',locs:['street','market'],                 fn:()=>doToiletOutdoorPublic()},
     // 風呂・清潔
-    {label:'自宅でお風呂',     color:'dim',    fn:()=>doBathHome()},
-    {label:'宿屋のシャワー',   color:'dim',    fn:()=>doShowerInn()},
-    {label:'野外で入浴する',   color:'crime',  fn:()=>doBathOutdoor()},
-    {label:'噴水で沐浴する',   color:'crime',  fn:()=>doWashFountain()},
-    {label:'ウェットシートで拭く',color:'dim', fn:()=>doWipeWetSheet()},
-    // 掘削・花壇
-    {label:'石畳を掘る',       color:'skill',  fn:()=>doDigStreet()},
-    {label:'花壇を掘り返す',   color:'crime',  fn:()=>doDigFlowerBed()},
-    {label:'花壇に水をあげる', color:'good',   fn:()=>doWaterFlowerBed()},
-    {label:'花壇の花を摘む',   color:'dim',    fn:()=>doPickFlower()},
-    {label:'石油を掘る',       color:'skill',  fn:()=>doDigOil()},
+    {label:'自宅でお風呂',     color:'dim',    locs:['inn'],   fn:()=>doBathHome()},
+    {label:'宿屋のシャワー',   color:'dim',    locs:['inn'],   fn:()=>doShowerInn()},
+    {label:'野外で入浴する',   color:'crime',  locs:['forest'],fn:()=>doBathOutdoor()},
+    {label:'噴水で沐浴する',   color:'crime',  locs:['street'],fn:()=>doWashFountain()},
+    {label:'ウェットシートで拭く',color:'dim', locs:'any',     fn:()=>doWipeWetSheet()},
+    // 掘削・花壇（街中）
+    {label:'石畳を掘る',       color:'skill',  locs:['street'],                fn:()=>doDigStreet()},
+    {label:'花壇を掘り返す',   color:'crime',  locs:['street','church'],       fn:()=>doDigFlowerBed()},
+    {label:'花壇に水をあげる', color:'good',   locs:['street','church'],       fn:()=>doWaterFlowerBed()},
+    {label:'花壇の花を摘む',   color:'dim',    locs:['street','church','forest'], fn:()=>doPickFlower()},
+    {label:'石油を掘る',       color:'skill',  locs:['street','forest'],       fn:()=>doDigOil()},
     // カメラ
-    {label:'写真を撮る',       color:'skill',  fn:()=>doTakePhoto('風景')},
-    {label:'盗撮する',         color:'crime',  fn:()=>doTakePhoto('盗撮')},
-    {label:'写真を売る',       color:'item',   fn:()=>doSellPhoto()},
-    // クラフト
-    {label:'包帯を作る',       color:'skill',  fn:()=>doCraft('bandage')},
-    {label:'毒薬を作る',       color:'crime',  fn:()=>doCraft('poison_potion')},
-    {label:'料理を作る',       color:'skill',  fn:()=>doCraft('meal')},
-    {label:'松明を作る',       color:'skill',  fn:()=>doCraft('torch')},
-    {label:'写真集を作る',     color:'skill',  fn:()=>doCraft('photo_album')},
+    {label:'写真を撮る',       color:'skill',  locs:'any',                                  fn:()=>doTakePhoto('風景')},
+    {label:'盗撮する',         color:'crime',  locs:['street','market','tavern','alley'],  fn:()=>doTakePhoto('盗撮')},
+    {label:'写真を売る',       color:'item',   locs:['market','street'],                    fn:()=>doSellPhoto()},
+    // クラフト（宿屋＝自宅の作業場）
+    {label:'包帯を作る',       color:'skill',  locs:['inn'], fn:()=>doCraft('bandage')},
+    {label:'毒薬を作る',       color:'crime',  locs:['inn'], fn:()=>doCraft('poison_potion')},
+    {label:'料理を作る',       color:'skill',  locs:['inn'], fn:()=>doCraft('meal')},
+    {label:'松明を作る',       color:'skill',  locs:['inn'], fn:()=>doCraft('torch')},
+    {label:'写真集を作る',     color:'skill',  locs:['inn'], fn:()=>doCraft('photo_album')},
     // 死体処理
-    {label:'死体を解体する',   color:'crime',  fn:()=>doDisposeCorpse('dissect')},
-    {label:'山に遺棄する',     color:'crime',  fn:()=>doDisposeCorpse('mountain')},
-    {label:'海に沈める',       color:'crime',  fn:()=>doDisposeCorpse('sea')},
-    // 宗教・教団
-    {label:'宗教・教団メニュー',   color:'faith',  fn:()=>openCultMenu()},
-    {label:'宗教団体に入る',     color:'faith',  fn:()=>openJoinCultMenu()},
-    {label:'新興宗教を立ち上げる', color:'faith', fn:()=>openFoundCultMenu(), req:()=>G.skills['信仰'].lv>=3},
-    {label:'教団を管理する',     color:'faith',  fn:()=>openOwnCultMenu(),    req:()=>!!G.cult},
-    // 罠
-    {label:'罠メニュー',         color:'skill',  fn:()=>openTrapMenu()},
-    {label:'罠を作る',           color:'skill',  fn:()=>openCraftTrapMenu()},
-    {label:'罠を買う',           color:'item',   fn:()=>openBuyTrapMenu()},
-    {label:'罠を仕掛ける',       color:'crime',  fn:()=>openSetTrapMenu(),    req:()=>G.trapInventory.length>0},
-    {label:'仕掛けた罠を確認',   color:'dim',    fn:()=>checkMyTraps()},
-    {label:'罠を回収する',       color:'dim',    fn:()=>retrieveTraps(),      req:()=>G.traps.length>0},
-    // 科学・化学
-    {label:'科学・化学メニュー',   color:'skill',  fn:()=>openScienceMenu()},
-    {label:'研究室を作る',       color:'skill',  fn:()=>buildLab(),           req:()=>G.skills['建築'].lv>=3&&!G.scienceLab},
-    {label:'化学実験をする',     color:'skill',  fn:()=>openChemMenu(),       req:()=>G.skills['化学'].lv>=1},
-    {label:'爆発物を製造',       color:'combat', fn:()=>craftExplosive(),     req:()=>G.skills['科学'].lv>=3},
-    {label:'クローンを生成する',   color:'skill',  fn:()=>openCloneMenu(),      req:()=>G.scienceLab&&G.skills['科学'].lv>=6},
-    {label:'人体錬成を試みる',   color:'combat', fn:()=>doHumanTransmutation(),req:()=>G.skills['錬金術'].lv>=5},
-    {label:'賢者の石を探求',   color:'faith',  fn:()=>doPhilosopherStone(), req:()=>G.skills['錬金術'].lv>=8},
-    // クローンに命令する
-    {label:'クローンに命令',       color:'skill',  fn:()=>openCloneOrderMenu(), req:()=>G.clones.length>0},
-    // 建物爆破・犯行声明
-    {label:'建物に爆発物を仕掛ける', color:'combat', fn:()=>openBuildingBombMenu(), req:()=>hasItem('explosive')||hasItem('timer_bomb')},
-    {label:'犯行声明を送る',       color:'crime',  fn:()=>openCriminalStatementMenu()},
-    {label:'脅迫状を送る',         color:'crime',  fn:()=>openThreatLetterMenu()},
-    {label:'手配レベルを確認',   color:'dim',    fn:()=>addLog(`🚨 手配レベル: Lv.${G.wantedLevel||0}。${(G.wantedLevel||0)===0?'安全。':(G.wantedLevel||0)<4?'要注意。':(G.wantedLevel||0)<8?'危険！衛兵が動いている。':'極度の危機！即時逃亡を。'}`,'warn')},
-    {label:'変装する',           color:'skill',  fn:()=>doDisguise(),         req:()=>(G.wantedLevel||0)>0&&G.skills['窃盗'].lv>=3},
-    {label:'街から逃亡する',     color:'combat', fn:()=>doFleeCity(),         req:()=>(G.wantedLevel||0)>0},
+    {label:'死体を解体する',   color:'crime',  locs:['inn','alley','forest'], fn:()=>doDisposeCorpse('dissect')},
+    {label:'山に遺棄する',     color:'crime',  locs:['forest'],               fn:()=>doDisposeCorpse('mountain')},
+    {label:'海に沈める',       color:'crime',  locs:['forest'],               fn:()=>doDisposeCorpse('sea')},
+    // 宗教・教団（メニューは教会／自宅）
+    {label:'新興宗教を立ち上げる', color:'faith', locs:['church','inn'], fn:()=>openFoundCultMenu(), req:()=>G.skills['信仰'].lv>=3},
+    {label:'教団を管理する',     color:'faith',  locs:'any',           fn:()=>openOwnCultMenu(),    req:()=>!!G.cult},
+    // 罠（作る・買うは宿屋。設置・回収はどこでも）
+    {label:'罠を作る',           color:'skill',  locs:['inn'], fn:()=>openCraftTrapMenu(), req:()=>G.skills['科学'].lv>=1||G.unlockedFeatures.trap},
+    {label:'罠を買う',           color:'item',   locs:['inn','market'], fn:()=>openBuyTrapMenu()},
+    {label:'罠を仕掛ける',       color:'crime',  locs:'any',   fn:()=>openSetTrapMenu(),   req:()=>G.trapInventory.length>0},
+    {label:'仕掛けた罠を確認',   color:'dim',    locs:'any',   fn:()=>checkMyTraps()},
+    {label:'罠を回収する',       color:'dim',    locs:'any',   fn:()=>retrieveTraps(),     req:()=>G.traps.length>0},
+    // 科学・化学（宿屋＝自宅の研究室）
+    {label:'研究室を作る',       color:'skill',  locs:['inn'], fn:()=>buildLab(),           req:()=>G.skills['建築'].lv>=3&&!G.scienceLab},
+    {label:'化学実験をする',     color:'skill',  locs:['inn'], fn:()=>openChemMenu(),       req:()=>G.skills['化学'].lv>=1},
+    {label:'爆発物を製造',       color:'combat', locs:['inn'], fn:()=>craftExplosive(),     req:()=>G.skills['科学'].lv>=3},
+    {label:'クローンを生成する', color:'skill',  locs:['inn'], fn:()=>openCloneMenu(),      req:()=>G.scienceLab&&G.skills['科学'].lv>=6},
+    {label:'人体錬成を試みる',   color:'combat', locs:['inn'], fn:()=>doHumanTransmutation(),req:()=>G.skills['錬金術'].lv>=5},
+    {label:'賢者の石を探求',     color:'faith',  locs:['inn'], fn:()=>doPhilosopherStone(), req:()=>G.skills['錬金術'].lv>=8},
+    // クローンに命令
+    {label:'クローンに命令',     color:'skill',  locs:'any',   fn:()=>openCloneOrderMenu(), req:()=>G.clones.length>0},
+    // 建物爆破・犯行声明（街中）
+    {label:'建物に爆発物を仕掛ける', color:'combat', locs:['street','market','alley'], fn:()=>openBuildingBombMenu(), req:()=>hasItem('explosive')||hasItem('timer_bomb')},
+    {label:'犯行声明を送る',       color:'crime',  locs:['inn','tavern','alley'], fn:()=>openCriminalStatementMenu()},
+    {label:'脅迫状を送る',         color:'crime',  locs:['inn','tavern','alley'], fn:()=>openThreatLetterMenu()},
+    {label:'手配レベルを確認',     color:'dim',    locs:'any', fn:()=>addLog(`🚨 手配レベル: Lv.${G.wantedLevel||0}。${(G.wantedLevel||0)===0?'安全。':(G.wantedLevel||0)<4?'要注意。':(G.wantedLevel||0)<8?'危険！衛兵が動いている。':'極度の危機！即時逃亡を。'}`,'warn')},
+    {label:'変装する',             color:'skill',  locs:'any', fn:()=>doDisguise(),         req:()=>(G.wantedLevel||0)>0&&G.skills['窃盗'].lv>=3},
+    {label:'街から逃亡する',       color:'combat', locs:'any', fn:()=>doFleeCity(),         req:()=>(G.wantedLevel||0)>0},
   ];
+
+  // 現在地でフィルタ
+  const here=G.currentLocation||'inn';
+  return all.filter(c=>{
+    if(!c.locs) return true;
+    if(c.locs==='any') return true;
+    if(Array.isArray(c.locs) && c.locs.includes('any')) return true;
+    return Array.isArray(c.locs) && c.locs.includes(here);
+  });
 }
 
 // ── 自分コマンド実装 ──────────────────────────────────────────

@@ -21,6 +21,14 @@ const G = {
   oilDrillDepth: 0,
   selectedTarget: 'self',
 
+  // 現在地・訪問済み
+  currentLocation: 'inn',
+  visitedLocations: ['inn'],
+  unlockedFeatures: {
+    trap: false,    // 罠工房（科学Lv1で解放）
+    science: false, // 科学研究室（建てると解放）
+  },
+
   // 仕事・ギルド
   jobStatus: null,         // null | { employer: id, role: 'part'|'staff', days: 0, salary: 0 }
   guildMember: false,
@@ -122,6 +130,7 @@ const NPCS = [
     id: 'baker',
     name: 'パン屋のガルド',
     type: '商人 / 中立',
+    location: 'market',
     hp: 30, maxHp: 30,
     attitude: 'neutral',
     statuses: [],
@@ -150,6 +159,7 @@ const NPCS = [
     id: 'guard',
     name: '衛兵のロック',
     type: '衛兵 / 中立',
+    location: 'street',
     hp: 60, maxHp: 60,
     attitude: 'neutral',
     statuses: [],
@@ -172,6 +182,7 @@ const NPCS = [
     id: 'priest',
     name: '神官のシルヴィア',
     type: '神官 / 友好',
+    location: 'church',
     hp: 25, maxHp: 25,
     attitude: 'friendly',
     statuses: [],
@@ -193,6 +204,7 @@ const NPCS = [
     id: 'thief',
     name: '怪しい男',
     type: '盗賊 / 敵対',
+    location: 'alley',
     hp: 35, maxHp: 35,
     attitude: 'hostile',
     statuses: [],
@@ -217,6 +229,7 @@ const NPCS = [
     id: 'elder',
     name: '老人のマルコ',
     type: '村人 / 中立',
+    location: 'tavern',
     hp: 15, maxHp: 15,
     attitude: 'neutral',
     statuses: [],
@@ -241,6 +254,7 @@ const NPCS = [
     id: 'adventurer_shop',
     name: 'ガーナの冒険者店',
     type: '商人 / 中立',
+    location: 'market',
     hp: 40, maxHp: 40,
     attitude: 'neutral',
     statuses: [],
@@ -278,6 +292,7 @@ const NPCS = [
     id: 'weapon_shop',
     name: 'ドワーフのドルグ',
     type: '武器商人 / 中立',
+    location: 'market',
     hp: 55, maxHp: 55,
     attitude: 'neutral',
     statuses: [],
@@ -312,6 +327,7 @@ const NPCS = [
     id: 'medicine_shop',
     name: '薬屋のベルタ',
     type: '薬師 / 中立',
+    location: 'market',
     hp: 20, maxHp: 20,
     attitude: 'neutral',
     statuses: [],
@@ -343,6 +359,7 @@ const NPCS = [
     id: 'guild_master',
     name: 'ギルドマスターのヴェル',
     type: 'ギルド / 中立',
+    location: 'guild',
     hp: 70, maxHp: 70,
     attitude: 'neutral',
     statuses: [],
@@ -366,6 +383,7 @@ const NPCS = [
     id: 'loan_shark',
     name: '金貸しのグリード',
     type: '金融業者 / 中立',
+    location: 'alley',
     hp: 45, maxHp: 45,
     attitude: 'neutral',
     statuses: [],
@@ -388,6 +406,7 @@ const NPCS = [
     id: 'colosseum_master',
     name: 'コロシアムの主催者',
     type: '興行師 / 中立',
+    location: 'colosseum',
     hp: 50, maxHp: 50,
     attitude: 'neutral',
     statuses: [],
@@ -555,6 +574,56 @@ const TRAP_TYPES = [
   { id:'poison_trap',  name:'毒針罠',     cost:60,  sciReq:3, effect:'対象に毒状態付与', targetType:'npc' },
   { id:'sleep_trap',   name:'眠り罠',     cost:70,  sciReq:3, effect:'対象を眠り状態にする', targetType:'npc' },
 ];
+
+// ── ロケーション定義 ──────────────────────────────────────────
+// 隣接関係（neighbors）を辿って移動。最初は宿屋スタートで、訪問するごとに
+// 隣接地が「移動先」に表示され、徐々に世界が広がっていく。
+const LOCATIONS = [
+  { id:'inn',       name:'宿屋',         emoji:'🛏️', desc:'安全な宿屋。休んだり技を練習できる。', neighbors:['street'] },
+  { id:'street',    name:'大通り',       emoji:'🏘️', desc:'街の中心。掲示板や求人板がある。',     neighbors:['inn','market','tavern','church','guild','forest'] },
+  { id:'market',    name:'市場',         emoji:'🛒', desc:'様々な店が並ぶ商業区。',               neighbors:['street','alley'] },
+  { id:'tavern',    name:'酒場',         emoji:'🍺', desc:'酔っ払いと噂話が飛び交う。',           neighbors:['street','alley'] },
+  { id:'church',    name:'教会',         emoji:'⛪', desc:'静かな祈りの場。',                     neighbors:['street'] },
+  { id:'guild',     name:'冒険者ギルド', emoji:'🏛️', desc:'依頼や賞金首を扱う。',                 neighbors:['street','colosseum'] },
+  { id:'alley',     name:'裏路地',       emoji:'🌑', desc:'危険な臭いがする。盗賊や金貸しが潜む。', neighbors:['market','tavern'] },
+  { id:'forest',    name:'北の森',       emoji:'🌲', desc:'モンスターが出る危険な森。資源も豊富。', neighbors:['street'] },
+  { id:'colosseum', name:'コロシアム',   emoji:'🏟️', desc:'闘技で名を上げる場。',                 neighbors:['guild'] },
+];
+
+function getLocation(id) { return LOCATIONS.find(l=>l.id===id); }
+
+// 場所ごとの「特殊ターゲット」（NPCではない、操作可能な場所要素）。
+// req() が無いか true を返すものだけ表示される。
+const LOCATION_SPECIALS = {
+  inn: [
+    { id:'housing', name:'住居変更',     emoji:'🏠',  desc:'住む場所を変える' },
+    { id:'trap',    name:'罠工房',       emoji:'⚙️',  desc:'罠を作る・買う', req:()=>G.skills['科学'].lv>=1||G.unlockedFeatures.trap||G.trapInventory.length>0 },
+    { id:'science', name:'科学研究室',   emoji:'🔬',  desc:'化学・クローン・錬金術', req:()=>G.scienceLab||G.unlockedFeatures.science },
+  ],
+  street: [
+    { id:'board',   name:'街の掲示板',   emoji:'📋',  desc:'噂・求人・手配書' },
+    { id:'job',     name:'求人板',       emoji:'💼',  desc:'日雇い仕事を探す' },
+    { id:'estate',  name:'不動産屋',     emoji:'🏗️', desc:'土地・建物を管理する' },
+  ],
+  market: [
+    { id:'trade',   name:'行商',         emoji:'🛒',  desc:'安く買って高く売る' },
+    { id:'stock',   name:'株式市場',     emoji:'📈',  desc:'株を売買する' },
+  ],
+  tavern: [
+    { id:'gamble',  name:'賭け場',       emoji:'🎲',  desc:'賭け事をする' },
+  ],
+  church: [
+    { id:'cult',    name:'宗教・教団',   emoji:'⛪',  desc:'宗教団体に入る・立ち上げる' },
+  ],
+  guild: [
+    { id:'bounty',  name:'賞金首掲示板', emoji:'🎯',  desc:'賞金首を探す' },
+  ],
+  alley: [],
+  forest: [
+    { id:'forest_explore', name:'森を探索する', emoji:'🌳', desc:'モンスター・採取・野営' },
+  ],
+  colosseum: [],
+};
 
 // ── 地面状態 ─────────────────────────────────────────────────
 const GROUND_STATE = {

@@ -9,15 +9,84 @@
   <style>
     /* ── 追加スタイル ── */
 
-    /* NPCグリッド */
+    /* NPCグリッド（外枠は単純なコンテナに） */
     #npc-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      padding: 8px;
+      padding: 0;
       overflow-y: auto;
       align-content: start;
     }
+    .npc-cards-grid, .move-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 6px 8px;
+    }
+
+    /* 現在地ヘッダー */
+    .loc-header {
+      background: linear-gradient(180deg, #1f1a30, #15101e);
+      border-bottom: 1px solid var(--gold-dim);
+      padding: 10px 12px 8px;
+      text-align: center;
+    }
+    .loc-header .loc-emoji {
+      font-size: 1.6rem;
+      line-height: 1.2;
+    }
+    .loc-header .loc-name {
+      font-size: 0.95rem;
+      color: var(--gold);
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+    .loc-header .loc-desc {
+      font-size: 0.66rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .loc-section-title {
+      font-size: 0.7rem;
+      color: var(--gold-dim);
+      letter-spacing: 1px;
+      margin: 8px 8px 2px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 3px;
+    }
+
+    /* 移動カード */
+    .move-card {
+      background: var(--bg-card);
+      border: 1px dashed var(--gold-dim);
+      border-radius: 4px;
+      padding: 8px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .move-card:hover {
+      border-style: solid;
+      border-color: var(--gold);
+      background: #1e1a10;
+      transform: translateY(-1px);
+    }
+    .move-card .move-emoji { font-size: 1.4rem; line-height: 1; }
+    .move-card .move-name {
+      font-size: 0.7rem;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .move-card .move-hint {
+      font-size: 0.55rem;
+      color: var(--gold-dim);
+    }
+    .move-card.unvisited .move-name { color: var(--text-dim); font-style: italic; }
+    .move-card.unvisited .move-hint { color: #ce93d8; }
     .npc-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -287,9 +356,9 @@
 <!-- ===== MAIN ===== -->
 <div id="main">
 
-  <!-- LEFT: NPC LIST (id=mob-npc, switchMobTabで制御) -->
-  <div id="mob-npc" style="background:var(--bg-panel);border-right:1px solid var(--border);">
-    <div class="panel-title">◈ 叜围の対象</div>
+  <!-- LEFT: LOCATION + NPC LIST (id=mob-npc, switchMobTabで制御) -->
+  <div id="mob-npc" style="background:var(--bg-panel);border-right:1px solid var(--border);overflow-y:auto;">
+    <div class="panel-title">◈ 周囲の状況</div>
     <div id="npc-grid"></div>
   </div>
 

@@ -144,33 +144,31 @@ function renderInventory() {
   `).join('');
 }
 
-// ── NPCリスト ─────────────────────────────────────────────────
+// ── NPCリスト（現在地ベース） ─────────────────────────────────
 function renderNpcList() {
   const el=document.getElementById('npc-grid');
   if(!el) return;
 
-  // 特殊ターゲット（自分・掲示板）
-  const specials=[
-    {id:'self',  name:'自分自身', emoji:'🧍', desc:'自分に対する行動', attitude:'self'},
-    {id:'board', name:'街の掲示板',emoji:'📋', desc:'掲示板に対する行動', attitude:'obj'},
-    {id:'forest',name:'北の森',   emoji:'🌲', desc:'森に行く', attitude:'obj'},
-    {id:'job',   name:'求人板',   emoji:'💼', desc:'日雇い仕事を探す', attitude:'obj'},
-    {id:'guild', name:'冒険者ギルド',emoji:'🏛️',desc:'ギルドに入会・依頼を受ける', attitude:'obj'},
-    {id:'gamble',name:'賭け場',   emoji:'🎲', desc:'賭け事をする', attitude:'obj'},
-    {id:'loan',  name:'金貸しグリード',emoji:'💸',desc:'お金を借りる・返す', attitude:'obj'},
-    {id:'trade', name:'行商',     emoji:'🛒', desc:'安く買って高く売る', attitude:'obj'},
-    {id:'estate',name:'不動産屋', emoji:'🏗️', desc:'土地・建物を管理する', attitude:'obj'},
-    {id:'bounty',name:'賞金首掲示板',emoji:'🎯',desc:'賞金首を探す', attitude:'obj'},
-    {id:'stock', name:'株式市場', emoji:'📈', desc:'株を売買する', attitude:'obj'},
-    {id:'colosseum',name:'コロシアム',emoji:'🏟️',desc:'戦闘で名声を得る', attitude:'obj'},
-    {id:'housing',name:'住居変更',emoji:'🏠', desc:'住む場所を変える', attitude:'obj'},
-    {id:'cult',   name:'宗教・教団',emoji:'⛪',  desc:'宗教団体に入る・立ち上げる', attitude:'obj'},
-    {id:'trap',   name:'罠工房',   emoji:'⚙️',  desc:'罠を作る・買う・仕掛ける', attitude:'obj'},
-    {id:'science',name:'科学研究室',emoji:'🔬', desc:'化学実験・クローン・錬金術', attitude:'obj'},
-  ];
+  const loc=getLocation(G.currentLocation)||LOCATIONS[0];
+  // 自分自身は常に表示
+  const self={id:'self', name:'自分自身', emoji:'🧍', attitude:'self'};
+  // この場所の特殊ターゲット（req()でフィルタ）
+  const specials=(LOCATION_SPECIALS[loc.id]||[]).filter(s=>!s.req||s.req())
+    .map(s=>({...s, attitude:'obj'}));
+  // この場所のNPC
+  const npcsHere=NPCS.filter(n=>n.location===loc.id && n.hp>0);
 
-  const allTargets=[...specials, ...NPCS];
-  el.innerHTML=allTargets.map(t=>{
+  const sectionHere=`
+    <div class="loc-header">
+      <div class="loc-emoji">${loc.emoji}</div>
+      <div class="loc-name">📍 ${loc.name}</div>
+      <div class="loc-desc">${loc.desc}</div>
+    </div>
+    <div class="loc-section-title">◈ ここにいる人・物</div>
+  `;
+
+  const allHere=[self, ...specials, ...npcsHere];
+  const cards=allHere.map(t=>{
     const isSelected=G.selectedTarget===t.id;
     const attClass=t.attitude==='self'?'att-self':
                    t.attitude==='obj'?'att-obj':
@@ -192,6 +190,48 @@ function renderNpcList() {
       <div class="npc-att">${attitudeLabel(t.attitude)}</div>
     </div>`;
   }).join('');
+
+  // 移動先（隣接ロケーション）
+  const neighbors=(loc.neighbors||[]).map(id=>getLocation(id)).filter(Boolean);
+  const moveCards=neighbors.map(n=>{
+    const visited=G.visitedLocations.includes(n.id);
+    return `<div class="move-card ${visited?'visited':'unvisited'}" onclick="moveTo('${n.id}')">
+      <div class="move-emoji">${n.emoji}</div>
+      <div class="move-name">${visited?n.name:`？${n.name}`}</div>
+      <div class="move-hint">${visited?'移動':'未踏の地'}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    ${sectionHere}
+    <div class="npc-cards-grid">${cards}</div>
+    <div class="loc-section-title">◈ 移動する</div>
+    <div class="move-cards-grid">${moveCards||'<div class="inv-empty">行ける場所がない</div>'}</div>
+  `;
+}
+
+// ── 場所移動 ──────────────────────────────────────────────────
+function moveTo(locId) {
+  const loc=getLocation(locId);
+  if(!loc){ addLog('そんな場所はない。','bad'); return; }
+  const cur=getLocation(G.currentLocation);
+  if(!cur || !cur.neighbors.includes(locId)){
+    addLog(`ここから直接「${loc.name}」には行けない。`,'bad'); return;
+  }
+  G.currentLocation=locId;
+  const firstVisit=!G.visitedLocations.includes(locId);
+  if(firstVisit){
+    G.visitedLocations.push(locId);
+    addLog(`✨ 初めて${loc.emoji} ${loc.name}に来た。${loc.desc}`,'level');
+  } else {
+    addLog(`📍 ${loc.emoji} ${loc.name}に移動した。`,'result');
+  }
+  advanceTurn();
+  // 移動先では「自分自身」をデフォルト選択
+  G.selectedTarget='self';
+  renderNpcList();
+  renderCommandArea(buildSelfCommands(),`自分自身（${loc.name}）`);
+  if(window.innerWidth<=700) switchMobTab('npc');
 }
 
 // ── ターゲット選択 ────────────────────────────────────────────
@@ -201,7 +241,8 @@ function selectTarget(id) {
 
   // 特殊ターゲット
   if(id==='self'){
-    renderCommandArea(buildSelfCommands(),'自分自身');
+    const loc=getLocation(G.currentLocation);
+    renderCommandArea(buildSelfCommands(),`自分自身（${loc?loc.name:''}）`);
     if(window.innerWidth<700) switchMobTab('log');
     return;
   }
@@ -210,16 +251,13 @@ function selectTarget(id) {
     if(window.innerWidth<700) switchMobTab('log');
     return;
   }
-  if(id==='forest'){ openForestMenu(); return; }
+  if(id==='forest_explore'){ openForestMenu(); return; }
   if(id==='job'){    openJobBoard(); return; }
-  if(id==='guild'){  openGuildMenu(); return; }
   if(id==='gamble'){ openGambleMenu(); return; }
-  if(id==='loan'){   openLoanMenu(); return; }
   if(id==='trade'){  openTradeMenu(); return; }
   if(id==='estate'){ openRealEstateMenu(); return; }
   if(id==='bounty'){ openBountyMenu(); return; }
   if(id==='stock'){  openStockMenu(); return; }
-  if(id==='colosseum'){ openColosseumMenu(); return; }
   if(id==='housing'){ openHousingMenu(); return; }
   if(id==='cult'){    openCultMenu(); return; }
   if(id==='trap'){    openTrapMenu(); return; }
@@ -280,6 +318,10 @@ function buildNpcCommands(npc) {
     // 依頼
     {label:'依頼を受ける',     color:'result', fn:()=>openNpcQuestMenu(npc)},
     {label:'雇ってくれと頼む', color:'result', fn:()=>doAskHire(npc),       req:()=>!!npc.jobSlots},
+    // 役割固有メニュー
+    {label:'ギルド業務を確認', color:'result', fn:()=>openGuildMenu(),      req:()=>npc.id==='guild_master'},
+    {label:'金を借りる/返す',  color:'result', fn:()=>openLoanMenu(),       req:()=>npc.id==='loan_shark'},
+    {label:'コロシアムに参加', color:'combat', fn:()=>openColosseumMenu(),  req:()=>npc.id==='colosseum_master'},
     // 特殊
     {label:'自首する',         color:'dim',    fn:()=>doSurrender(npc),     req:()=>npc.id==='guard'},
     {label:'治療を頼む',       color:'good',   fn:()=>doAskHeal(npc),       req:()=>npc.id==='priest'},
@@ -397,12 +439,16 @@ function init() {
   addLog('  自由度重視プロトタイプ','dim');
   addLog('═══════════════════════════════','dim');
   addLog('あなたは王国の街「エルナ」に降り立った。','result');
-  addLog('左のパネルから対象を選び、コマンドを実行しよう。','dim');
-  addLog('スキルを使うほど成長し、新しいコマンドが解放される。','dim');
+  addLog('🛏️ ひとまず宿屋で休んでいる。','result');
+  addLog('左のパネル「移動する」から場所を変えて、街を探索しよう。','dim');
+  addLog('場所によって会える人物・できる行動が変わる。','dim');
   addLog('───────────────────────────────','dim');
+  G.currentLocation='inn';
+  if(!G.visitedLocations.includes('inn')) G.visitedLocations.push('inn');
   G.selectedTarget='self';
   renderNpcList();
-  renderCommandArea(buildSelfCommands(),'自分自身');
+  const loc=getLocation(G.currentLocation);
+  renderCommandArea(buildSelfCommands(),`自分自身（${loc?loc.name:''}）`);
   updateUI();
   // 初期化完了後にモバイル初期タブをNPCに設定
   window._initDone=true;
