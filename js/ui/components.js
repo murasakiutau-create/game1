@@ -1,5 +1,7 @@
 // Tiny DOM helpers for building the UI declaratively.
 
+import { playPrimaryClick } from "./audio.js";
+
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
@@ -33,10 +35,14 @@ export function btn(label, onClick, opts = {}) {
   if (opts.small) cls.push("small");
   if (opts.block) cls.push("block");
   if (opts.className) cls.push(opts.className);
+  const wantsSfx = opts.sfx === true || (opts.sfx !== false && opts.primary);
+  const handler = wantsSfx
+    ? (e) => { playPrimaryClick(); if (onClick) onClick(e); }
+    : onClick;
   return h("button", {
     class: cls.join(" "),
     type: "button",
-    onClick,
+    onClick: handler,
     disabled: opts.disabled || false,
     "aria-label": opts.ariaLabel,
   }, label);

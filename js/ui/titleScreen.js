@@ -18,8 +18,8 @@ export function renderTitleScene(host, { onStart }) {
         btn("新しく始める", () => {
           confirmIfSlotsExist(() => { newGame(); onStart(); });
         }, { primary: true }),
-        btn("セーブから続ける", () => openSlotsDialog(onStart), { ghost: true }),
-        btn("コードから読み込む", () => importDialog(onStart), { ghost: true, small: true }),
+        btn("セーブから続ける", () => openSlotsDialog(onStart), { ghost: true, sfx: true }),
+        btn("コードから読み込む", () => importDialog(onStart), { ghost: true, small: true, sfx: true }),
       ),
       h("div", { class: "credit" }, "フォント混植：Oradano明朝GSRR（仮名／内田明氏）＋ 源界明朝 Genkai Mincho（漢字／SIL OFL 1.1）"),
     )
