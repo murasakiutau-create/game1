@@ -127,7 +127,7 @@ function renderShopTab(refresh) {
   const used = shelfTypesUsed();
   const cap = shelfTypesMax();
   wrap.appendChild(h("p", { class: "muted" },
-    `棚の使用：${used} / ${cap} 種（棚 ${state.shopShelves} 個 × ${SHELF_TYPES_PER_SHELF}）`));
+    `陳列中：${used} / ${cap} 種類（棚 ${state.shopShelves} 個 × ${SHELF_TYPES_PER_SHELF} 種）。同じ品は1つの枠に何個でも積めます。`));
 
   // Inventory items that can be listed
   const sellableItems = state.inventory.items.filter(it => {
@@ -199,7 +199,7 @@ function renderShopTab(refresh) {
     shelf.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[s.quality])),
-        h("span", null, "棚 " + s.count),
+        h("span", null, `店頭 ×${s.count}`),
       ),
       h("div", { class: "row", style: { alignItems: "center", gap: "0.4rem", flexWrap: "wrap" } },
         h("label", null, "売値"),
