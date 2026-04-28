@@ -8,10 +8,11 @@ import { canCraft, craft, predictCraftQuality } from "../systems/crafting.js";
 import { listOnShelf, unlistFromShelf } from "../systems/shop.js";
 import {
   SHELF_TYPES_PER_SHELF,
-  HARD_MAX_SHELVES,
+  MAX_EXTRA_SHELVES,
   shelfTypesMax,
   shelfTypesUsed,
   effectiveShelves,
+  extraShelves,
   tierBaselineShelves,
   nextShelfCost,
   canBuyShelf,
@@ -220,57 +221,57 @@ function renderShopTab(refresh) {
 }
 
 function renderShopExpansionTab(refresh) {
-  const eff = effectiveShelves();
   const baseline = tierBaselineShelves();
+  const extra = extraShelves();
+  const eff = effectiveShelves();
   const cost = nextShelfCost();
   const check = canBuyShelf();
-  const atMax = eff >= HARD_MAX_SHELVES;
+  const atMax = extra >= MAX_EXTRA_SHELVES;
   const cap = eff * SHELF_TYPES_PER_SHELF;
-  const hardCap = HARD_MAX_SHELVES * SHELF_TYPES_PER_SHELF;
+  const tierCap = baseline * SHELF_TYPES_PER_SHELF;
+  const expansionMaxTypes = (baseline + MAX_EXTRA_SHELVES) * SHELF_TYPES_PER_SHELF;
 
   const body = h("div", { class: "stack" },
     h("p", { class: "muted" },
-      `名声段階に応じて棚は自動で増えます（現在の段階の基準：${baseline} 個 / ${baseline * SHELF_TYPES_PER_SHELF} 種類）。` +
-      `さらに金貨を払って最大 ${HARD_MAX_SHELVES} 個（${hardCap} 種類）まで拡張できます。`),
+      `名声段階に応じて棚は自動で増えます（現在の段階の基準：${baseline} 個 / ${tierCap} 種類）。` +
+      `さらに金貨を払って最大 +${MAX_EXTRA_SHELVES} 棚（+${MAX_EXTRA_SHELVES * SHELF_TYPES_PER_SHELF} 種類）まで拡張できます。`),
     h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, "現在の店"),
-        h("span", { class: "tag gold" }, `棚 ${eff} / ${HARD_MAX_SHELVES} 個`),
+        h("span", { class: "tag gold" }, `棚 ${eff} 個（基準 ${baseline} +拡張 ${extra}）`),
       ),
       h("div", { class: "muted" }, `陳列容量：${shelfTypesUsed()} / ${cap} 種類`),
       h("div", { class: "muted" },
-        eff > baseline
-          ? `名声段階の基準 ${baseline} 個 +${eff - baseline} 個拡張済み`
-          : `名声段階の基準 ${baseline} 個（拡張なし）`),
+        `現段階の最大拡張：${baseline + MAX_EXTRA_SHELVES} 個 / ${expansionMaxTypes} 種類`),
     ),
     h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
-        h("strong", null, atMax ? "上限到達" : `棚を増設（次は ${eff + 1} 個目）`),
+        h("strong", null, atMax ? "拡張上限に到達" : `棚を増設（拡張 +${extra + 1} 棚目）`),
         !atMax && cost != null
           ? h("span", { class: "tag" }, `${cost.toLocaleString()} G`)
           : null,
       ),
       atMax
         ? h("p", { class: "muted" },
-            `最大 ${HARD_MAX_SHELVES} 個（${hardCap} 種類）まで拡張済みです。`)
+            `拡張は最大 +${MAX_EXTRA_SHELVES} 棚まで。これ以上は名声を上げて段階基準を引き上げてください。`)
         : h("p", { class: "muted" },
             `増設後の容量：${(eff + 1) * SHELF_TYPES_PER_SHELF} 種類。`),
       h("div", { class: "row" },
         btn(atMax
-              ? "上限到達"
+              ? "拡張上限"
               : (cost != null && state.gold < cost ? "金貨不足" : "棚を増設する"),
           () => {
             const res = buyShelf();
             if (!res.ok) {
               toast(
-                res.reason === "max"  ? `これ以上は増設できません（上限 ${HARD_MAX_SHELVES} 個）。` :
+                res.reason === "max"  ? `拡張は最大 +${MAX_EXTRA_SHELVES} 棚までです。` :
                 res.reason === "gold" ? "金貨が足りません。" :
                 "増設できません。",
                 { error: true },
               );
               return;
             }
-            toast(`棚を増設しました（${res.cost.toLocaleString()} G）。現在 ${res.shelves} 個。`);
+            toast(`棚を増設しました（${res.cost.toLocaleString()} G）。棚 ${res.effective} 個（拡張 ${res.extra}）。`);
             refresh();
           },
           { primary: check.ok, ghost: !check.ok, disabled: !check.ok, sfx: "plain" }),

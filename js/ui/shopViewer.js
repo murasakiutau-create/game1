@@ -9,7 +9,8 @@ import {
   shelfTypesMax,
   shelfTypesUsed,
   effectiveShelves,
-  HARD_MAX_SHELVES,
+  tierBaselineShelves,
+  MAX_EXTRA_SHELVES,
 } from "../systems/shopExpansion.js";
 import { itemIconKind, iconChip } from "./iconKind.js";
 
@@ -27,11 +28,11 @@ function renderOverview() {
   const totalItems = (state.inventory.items || []).reduce((s, it) => s + it.count, 0);
   const totalMats = sumMatCount();
   const cap = effectiveShelves() * SHELF_TYPES_PER_SHELF;
-  const hardCap = HARD_MAX_SHELVES * SHELF_TYPES_PER_SHELF;
+  const expansionMax = (tierBaselineShelves() + MAX_EXTRA_SHELVES) * SHELF_TYPES_PER_SHELF;
   const grid = h("div", { class: "card-grid" },
     statCard("店ランク", `${tier.label}　${stars}`),
     statCard("所持金貨", `${state.gold.toLocaleString()} G`),
-    statCard("陳列容量", `${shelfTypesUsed()} / ${cap} 種類（上限 ${hardCap}）`),
+    statCard("陳列容量", `${shelfTypesUsed()} / ${cap} 種類（拡張上限 ${expansionMax}）`),
     statCard("店頭の在庫", `${shelfStockTotal()} 点`),
     statCard("倉庫アイテム", `${totalItems} 点（${(state.inventory.items || []).length} 種類）`),
     statCard("素材総数", `${totalMats} 点`, () => openMaterialList()),
