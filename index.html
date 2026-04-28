@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Textual Nefia - テキストRPGプロトタイプ</title>
+  <link rel="stylesheet" href="font.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── 追加スタイル ── */
+
+    /* NPCグリッド */
+    #npc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 8px;
+      overflow-y: auto;
+      align-content: start;
+    }
+    .npc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .npc-card:hover { border-color: var(--border-glow); background: #1e1e40; }
+    .npc-card.selected { border-color: var(--gold); background: #1e1a10; box-shadow: 0 0 8px rgba(201,168,76,0.3); }
+    .npc-emoji { font-size: 1.4rem; line-height: 1; }
+    .npc-name { font-size: 0.65rem; color: var(--text); line-height: 1.2; }
+    .npc-att  { font-size: 0.55rem; color: var(--text-dim); }
+    .npc-hp-bar { width: 100%; height: 3px; background: var(--red-dim); border-radius: 2px; overflow: hidden; }
+    .npc-hp-bar div { height: 100%; background: var(--red); transition: width 0.3s; }
+
+    .att-friendly { border-color: #4caf50; }
+    .att-friendly .npc-att { color: #81c784; }
+    .att-hostile  { border-color: #e53935; }
+    .att-hostile  .npc-att { color: #ef9a9a; }
+    .att-charmed  { border-color: #9c27b0; }
+    .att-charmed  .npc-att { color: #ce93d8; }
+    .att-believer { border-color: var(--gold); }
+    .att-believer .npc-att { color: var(--gold); }
+    .att-self     { border-color: var(--blue); }
+    .att-obj      { border-color: #555; }
+
+    /* コマンドエリア */
+    .cmd-title {
+      font-size: 0.7rem;
+      color: var(--gold-dim);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    .cmd-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .cmd-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-family: 'DotGothic16', monospace;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.12s;
+      white-space: nowrap;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+    }
+    .cmd-btn:hover { background: #252545; transform: translateY(-1px); }
+    .cmd-btn:active { transform: translateY(1px); box-shadow: none; }
+    .cmd-disabled { opacity: 0.3; cursor: not-allowed !important; transform: none !important; }
+
+    /* ログエントリ */
+    .log-entry { padding: 2px 0; line-height: 1.6; font-size: 0.82rem; }
+    .log-result { color: var(--text); }
+    .log-good   { color: #81c784; }
+    .log-bad    { color: #ef9a9a; }
+    .log-combat { color: #ff8a65; }
+    .log-crime  { color: #ce93d8; }
+    .log-faith  { color: var(--gold); }
+    .log-magic  { color: #80cbc4; }
+    .log-skill  { color: #fff176; }
+    .log-level  { color: var(--green); text-shadow: 0 0 6px var(--green); }
+    .log-dim    { color: var(--text-dim); }
+    .log-item   { color: #a5d6a7; }
+    .log-system { color: var(--blue); }
+
+    /* スキル */
+    .skill-item { margin-bottom: 6px; }
+    .skill-name { font-size: 0.75rem; color: var(--text); }
+    .skill-lv   { font-size: 0.7rem; color: var(--green); float: right; }
+    .skill-bar  { width: 100%; height: 3px; background: var(--green-dim); border-radius: 2px; margin-top: 2px; overflow: hidden; }
+    .skill-bar-fill { height: 100%; background: var(--green); box-shadow: 0 0 4px var(--green); transition: width 0.4s; }
+
+    /* インベントリ */
+    .inv-item  { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(46,46,94,0.4); font-size: 0.75rem; }
+    .inv-name  { color: var(--text); }
+    .inv-qty   { color: var(--gold); }
+    .inv-empty { color: var(--text-dim); font-style: italic; font-size: 0.8rem; }
+
+    /* モーダル */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal {
+      background: var(--bg-card);
+      border: 1px solid var(--gold);
+      border-radius: 6px;
+      padding: 20px;
+      max-width: 420px;
+      width: 92%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 0 30px rgba(201,168,76,0.3);
+      position: relative;
+    }
+    .modal-title { color: var(--gold); font-size: 1rem; margin-bottom: 10px; font-weight: bold; }
+    .modal-body  { color: var(--text); font-size: 0.85rem; line-height: 1.7; margin-bottom: 14px; }
+    .modal-opts  { display: flex; flex-direction: column; gap: 6px; }
+    .modal-btn {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: 'DotGothic16', monospace;
+      font-size: 0.83rem;
+      transition: all 0.12s;
+    }
+    .modal-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .modal-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      width: 28px; height: 28px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 0.9rem;
+      font-family: 'DotGothic16', monospace;
+    }
+
+    /* カルマバー */
+    .karma-bar-wrap {
+      position: relative;
+      width: 100%;
+      height: 12px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+    #karma-bar-fill {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      transition: width 0.4s, background 0.4s;
+    }
+    .karma-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    #karma-value {
+      font-size: 0.72rem;
+      text-align: center;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* 戻るボタン（モバイルのみ表示） */
+    .mob-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--gold-dim);
+      border-radius: 4px;
+      color: var(--gold);
+      font-family: 'DotGothic16', monospace;
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .mob-back-btn:active {
+      background: #1a1a10;
+    }
+    @media (min-width: 701px) {
+      .mob-back-btn {
+        display: none !important;
+      }
+    }
+
+    /* ===== デスクトップ: 全パネル表示 ===== */
+    @media (min-width: 701px) {
+      #mob-npc, #mob-log, #mob-status { display: flex !important; }
+      #mobile-tabs { display: none !important; }
+      #main {
+        display: grid;
+        grid-template-columns: 260px 1fr 220px;
+        flex: 1;
+        overflow: hidden;
+      }
+    }
+
+    /* ===== モバイル: タブで切り替え ===== */
+    @media (max-width: 700px) {
+      #main {
+        position: relative;
+        flex: 1;
+        overflow: hidden;
+      }
+      /* 全パネルをデフォルト非表示 */
+      #mob-npc, #mob-log, #mob-status {
+        display: none;
+        position: absolute;
+        inset: 0;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      /* アクティブなパネルのみ表示 */
+      #mob-npc.mob-active,
+      #mob-log.mob-active,
+      #mob-status.mob-active {
+        display: flex !important;
+      }
+      /* タブバーを表示 */
+      #mobile-tabs { display: flex !important; }
+
+      /* コマンドエリアの高さ制限 */
+      #command-area {
+        max-height: 50vh;
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div id="header">
+  <h1>⚔ TEXTUAL NEFIA</h1>
+  <span class="subtitle">v3 prototype</span>
+  <div id="player-stats">
+    <div class="stat-row">
+      <div class="stat-item"><span class="stat-label">HP</span><span class="stat-value" id="stat-hp">80/80</span></div>
+      <div class="stat-item"><span class="stat-label">SAN</span><span class="stat-value" id="stat-san">80</span></div>
+      <div class="stat-item"><span class="stat-label">所持金</span><span class="stat-value gold-val" id="stat-gold">350G</span></div>
+      <div class="stat-item"><span class="stat-label">運</span><span class="stat-value" id="stat-luck">50.0</span></div>
+      <div class="stat-item"><span class="stat-label">ターン</span><span class="stat-value" id="stat-turn">0</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-item"><span class="stat-label">空腹</span><span class="stat-value" id="stat-hunger">100</span></div>
+      <div class="stat-item"><span class="stat-label">清潔度</span><span class="stat-value" id="stat-clean">50</span></div>
+      <div class="stat-item"><span class="stat-label">トイレ</span><span class="stat-value" id="stat-toilet">0</span></div>
+      <div class="stat-item"><span class="stat-label">カルマ</span><span class="stat-value" id="stat-karma-val">+10</span></div>
+      <div class="stat-item"><span class="stat-label">手配</span><span class="stat-value" id="stat-wanted">Lv.0</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+
+  <!-- LEFT: NPC LIST (id=mob-npc, switchMobTabで制御) -->
+  <div id="mob-npc" style="background:var(--bg-panel);border-right:1px solid var(--border);">
+    <div class="panel-title">◈ 叜围の対象</div>
+    <div id="npc-grid"></div>
+  </div>
+
+  <!-- CENTER: LOG + COMMANDS (id=mob-log, switchMobTabで制御) -->
+  <div id="mob-log" style="flex-direction:column;background:var(--bg-deep);">
+    <!-- addLog()はid="log"に追記する -->
+    <div id="log" style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:2px;"></div>
+    <div id="command-area" style="border-top:1px solid var(--border);background:var(--bg-panel);padding:10px 14px;flex-shrink:0;">
+      <div class="cmd-title">対象を選んでください</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: STATUS (id=mob-status, switchMobTabで制御) -->
+  <div id="mob-status" style="background:var(--bg-panel);border-left:1px solid var(--border);overflow-y:auto;">
+    <div class="panel-title">◈ ステータス</div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ 基本情報</div>
+      <div style="font-size:0.78rem;line-height:1.8;color:var(--text);">
+        <div id="stat-housing">住居: 野宠</div>
+        <div id="stat-clothes">服装: 普通</div>
+        <div id="stat-art">艺術: 0</div>
+        <div id="stat-familiars"></div>
+      </div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ カルマ</div>
+      <div class="karma-bar-wrap">
+        <div id="karma-bar-fill" style="width:50%;background:#4caf50;"></div>
+      </div>
+      <div class="karma-labels"><span>善 +100</span><span>悪 -100</span></div>
+      <div id="karma-value">中立</div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ スキル</div>
+      <div id="skills-list"></div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ インベントリ</div>
+      <div id="inventory-list"><div class="inv-empty">何も持っていない</div></div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ 依頼・债务</div>
+      <div id="quest-status" style="font-size:0.75rem;color:var(--text-dim);">なし</div>
+    </div>
+
+    <div class="status-section">
+      <div class="status-section-title">◆ 所有地・建物</div>
+      <div id="estate-status" style="font-size:0.75rem;color:var(--text-dim);">なし</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ===== MOBILE TAB BAR ===== -->
+<div id="mobile-tabs" style="display:none;flex-shrink:0;background:var(--bg-panel);border-top:2px solid var(--gold-dim);">
+  <button class="mob-tab mob-active" id="tab-npc" onclick="switchMobTab('npc')">
+    <span class="tab-icon">👥</span><span>NPC</span>
+  </button>
+  <button class="mob-tab" id="tab-log" onclick="switchMobTab('log')">
+    <span class="tab-icon">📜</span><span>ログ</span>
+  </button>
+  <button class="mob-tab" id="tab-status" onclick="switchMobTab('status')">
+    <span class="tab-icon">📊</span><span>状態</span>
+  </button>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal"></div>
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="systems.js"></script>
+<script src="ui.js"></script>
+<script
+  defer
+  src="%VITE_ANALYTICS_ENDPOINT%/umami"
+  data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+</body>
+</html>
