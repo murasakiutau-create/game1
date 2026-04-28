@@ -782,6 +782,11 @@ function buildSelfCommands() {
     {label:'手袋を脱ぐ',       color:'dim',    locs:'any', fn:()=>doUndress('hands')},
     {label:'物乞いをする',     color:'crime',  locs:['street','market'],          fn:()=>doBeg()},
     {label:'全裸で歩く',       color:'crime',  locs:['street','market','alley'], fn:()=>doWalkNaked()},
+    // 野外排泄・野外入浴（犯罪フレーバー）
+    {label:'路地裏で用を足す', color:'crime',  locs:['alley'],            fn:()=>doToiletOutdoorHidden()},
+    {label:'街中で堂々と用を足す',color:'crime',locs:['street','market'], fn:()=>doToiletOutdoorPublic()},
+    {label:'野外で入浴する',   color:'crime',  locs:['forest'],           fn:()=>doBathOutdoor()},
+    {label:'噴水で沐浴する',   color:'crime',  locs:['street'],           fn:()=>doWashFountain()},
     // 掘削・花壇（街中）
     {label:'石畳を掘る',       color:'skill',  locs:['street'],                fn:()=>doDigStreet()},
     {label:'花壇を掘り返す',   color:'crime',  locs:['street','church'],       fn:()=>doDigFlowerBed()},
