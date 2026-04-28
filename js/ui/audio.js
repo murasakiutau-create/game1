@@ -2,8 +2,10 @@
 
 const SRC_PRIMARY = "assets/sfx/primary-button.mp3";
 const SRC_GHOST = "assets/sfx/ghost-button.mp3";
+const SRC_PLAIN = "assets/sfx/plain-button.mp3";
 const VOLUME_PRIMARY = 0.7;
 const VOLUME_GHOST = 0.6;
+const VOLUME_PLAIN = 0.6;
 
 const templates = {};
 
@@ -33,5 +35,9 @@ export function playPrimaryClick() {
 
 export function playGhostClick() {
   playClone(SRC_GHOST, VOLUME_GHOST);
+}
+
+export function playPlainClick() {
+  playClone(SRC_PLAIN, VOLUME_PLAIN);
 }
 
