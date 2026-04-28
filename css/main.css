@@ -279,7 +279,7 @@ ul { padding-left: 1.2em; margin: 0.4em 0; }
 /* ---------- Settings: top-left fab + modal controls ---------- */
 
 .side-rail {
-  position: fixed;
+  position: absolute;
   top: max(0.5rem, env(safe-area-inset-top));
   left: max(0.5rem, env(safe-area-inset-left));
   z-index: 40;
