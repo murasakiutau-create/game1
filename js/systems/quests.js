@@ -21,10 +21,15 @@ function ensureShape() {
 }
 
 // Roll 2-3 fresh contracts for today, replacing any that weren't accepted.
+// Templates already represented in the active list are skipped so the
+// player isn't shown a duplicate of a contract they're already pursuing.
 export function refreshQuests() {
   ensureShape();
   const tier = repTier().index;
-  const eligible = QUEST_TEMPLATES.filter(t => (t.minTier || 0) <= tier);
+  const activeTemplateIds = new Set((state.quests.active || []).map(q => q.templateId));
+  const eligible = QUEST_TEMPLATES.filter(t =>
+    (t.minTier || 0) <= tier && !activeTemplateIds.has(t.id)
+  );
   if (eligible.length === 0) {
     state.quests.available = [];
     return;

@@ -65,7 +65,7 @@ export function renderNightScene(host, { onAdvance, refresh }) {
   wrap.appendChild(panel("",
     h("div", { class: "stack" },
       h("p", { class: "muted" }, "翌日へ進むと給与が支払われ、市場が更新されます。"),
-      btn("翌日（朝）へ", () => onAdvance(), { primary: true, block: true }),
+      btn("翌日（朝）へ", () => onAdvance(), { primary: true, block: true, sfx: "primary" }),
     ), "❦"));
 
   host.appendChild(wrap);
@@ -117,7 +117,7 @@ function renderSlotCard(id, data, refresh) {
             }).catch(() => toast("保存に失敗しました。", { error: true }));
           }
         },
-        { primary: true, small: true }),
+        { primary: true, small: true, sfx: "primary" }),
       meta ? btn("削除", () => {
         confirmModal({
           title: `スロット ${id} を削除`,

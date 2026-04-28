@@ -54,7 +54,9 @@ function resolveSfx(opts) {
   if (opts.sfx === "ghost") return playGhostClick;
   if (opts.sfx === "plain") return playPlainClick;
   if (opts.sfx === true) return playPrimaryClick;
-  if (opts.primary) return playPrimaryClick;
+  // Visual style alone no longer maps to the primary SFX. Only buttons
+  // tagged with sfx: "primary" use it (save/start + time-advance). Brown
+  // ghost/dark buttons default to the brown SFX; everything else plays plain.
   if (opts.ghost || opts.dark) return playGhostClick;
   return playPlainClick;
 }

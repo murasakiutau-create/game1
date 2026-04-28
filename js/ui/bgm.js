@@ -111,15 +111,10 @@ export function applyBgm() {
   }
 }
 
-export function initBgm() {
+// BGM is started explicitly by main.js when the player presses a
+// game-start button (新しく始める / ここから続ける / 読み込む /
+// セーブから続ける) — not at boot. Subsequent settings changes flow
+// through applyBgm() directly from the settings modal.
+export function startBgm() {
   applyBgm();
-  // Browsers usually block autoplay until first user gesture.
-  // Retry on the very first interaction.
-  const onGesture = () => {
-    applyBgm();
-    window.removeEventListener("pointerdown", onGesture);
-    window.removeEventListener("keydown", onGesture);
-  };
-  window.addEventListener("pointerdown", onGesture, { once: true });
-  window.addEventListener("keydown", onGesture, { once: true });
 }

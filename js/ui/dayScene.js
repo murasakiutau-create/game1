@@ -31,7 +31,7 @@ export function renderDayScene(host, { onAdvance, refresh }) {
   wrap.appendChild(panel("",
     h("div", { class: "stack" },
       h("p", { class: "muted" }, "客の購買は昼の終わりに自動でシミュレートされます。棚を整えてから「夕へ」を押してください。"),
-      btn("店じまい → 夕へ", () => onAdvance(), { primary: true, block: true })
+      btn("店じまい → 夕へ", () => onAdvance(), { primary: true, block: true, sfx: "primary" })
     ), "❦"));
 
   host.appendChild(wrap);

@@ -25,7 +25,7 @@ export function renderShell(root, sceneEl, navHandlers) {
       h("span", { class: "label" }, "評判"),
       h("span", { class: "value" }, `${tier.label} `, h("span", { class: "rep-stars" }, stars)),
     ),
-    btn("📜 記録", navHandlers.openLogs, { ghost: true, small: true }),
+    btn("記録", navHandlers.openLogs, { ghost: true, small: true }),
   );
 
   const sceneHost = h("main", { class: "scene", id: "scene-host" }, sceneEl);

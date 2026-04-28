@@ -17,7 +17,7 @@ export function renderTitleScene(host, { onStart }) {
       h("div", { class: "actions" },
         btn("新しく始める", () => {
           confirmIfSlotsExist(() => { newGame(); onStart(); });
-        }, { primary: true }),
+        }, { primary: true, sfx: "primary" }),
         btn("セーブから続ける", () => openSlotsDialog(onStart), { ghost: true, sfx: "primary" }),
         btn("コードから読み込む", () => importDialog(onStart), { ghost: true, small: true, sfx: "primary" }),
       ),
@@ -69,7 +69,7 @@ function openSlotsDialog(onStart) {
                 toast(e.message || "読込に失敗しました。", { error: true, ms: 3500 });
               }
             },
-            { primary: !!meta, disabled: !meta, small: true }),
+            { primary: !!meta, disabled: !meta, small: true, sfx: meta ? "primary" : false }),
           meta ? btn("削除", () => {
             confirmModal({
               title: `スロット ${id} を削除`,
@@ -99,7 +99,7 @@ function importDialog(onStart) {
     } catch (e) {
       toast(e.message || "読込に失敗しました。", { error: true, ms: 3500 });
     }
-  }, { primary: true });
+  }, { primary: true, sfx: "primary" });
   const m = modal(
     h("div", null,
       h("p", null, "他端末などで保存した記録コードを貼り付けると、続きから始められます。"),

@@ -54,7 +54,7 @@ export function renderEveningScene(host, { onAdvance, refresh }) {
 
   wrap.appendChild(panel("",
     h("div", { class: "stack" },
-      btn("夜の作業へ", () => onAdvance(), { primary: true, block: true }),
+      btn("夜の作業へ", () => onAdvance(), { primary: true, block: true, sfx: "primary" }),
     ), "❦"));
 
   host.appendChild(wrap);

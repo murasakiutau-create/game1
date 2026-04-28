@@ -1,7 +1,7 @@
 // Fixed top-left ⚙️ button that opens the settings modal.
 
 import { openSettingsModal } from "./settingsModal.js";
-import { playGhostClick } from "./audio.js";
+import { playPlainClick } from "./audio.js";
 
 let mounted = null;
 
@@ -13,7 +13,7 @@ export function mountSettingsButton() {
   b.setAttribute("aria-label", "設定");
   b.textContent = "⚙";
   b.addEventListener("click", () => {
-    playGhostClick();
+    playPlainClick();
     openSettingsModal();
   });
   document.body.appendChild(b);

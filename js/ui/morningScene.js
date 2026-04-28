@@ -67,7 +67,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
         memberCards,
         h("div", { class: "row", style: { marginTop: "0.5rem", flexWrap: "wrap" } },
           btn("メンバー編集", () => openPartyEditor(pt, refresh), { small: true, primary: true }),
-          btn("派遣先変更", () => openLocationPicker(pt, refresh), { small: true, dark: true }),
+          btn("派遣先変更", () => openLocationPicker(pt, refresh), { small: true, dark: true, sfx: "plain" }),
           btn("解散", () => {
             confirmModal({
               title: "パーティ解散",
@@ -92,7 +92,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
     { primary: true, block: true }));
   if ((state.lastDispatch || []).length > 0) {
     partiesBody.appendChild(btn("⟲ 前回と同じ編成で派遣", () => redoLastDispatch(refresh),
-      { dark: true, block: true }));
+      { dark: true, block: true, sfx: "plain" }));
   }
   phase.appendChild(panel(`派遣パーティ（${state.pendingDispatch.length}組）`, partiesBody, "✦"));
 
@@ -170,7 +170,7 @@ export function renderMorningScene(host, { onAdvance, refresh }) {
           }
         }
         onAdvance();
-      }, { primary: true, block: true, disabled: totalDispatched > 0 && !canAfford }),
+      }, { primary: true, block: true, disabled: totalDispatched > 0 && !canAfford, sfx: "primary" }),
     ), "❦"));
 
   host.appendChild(phase);
