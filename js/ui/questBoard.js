@@ -4,7 +4,7 @@
 
 import { h, btn, modal, panel, confirmModal, toast } from "./components.js";
 import { state } from "../state.js";
-import { acceptQuest, cancelQuest } from "../systems/quests.js";
+import { acceptQuest, cancelQuest, MAX_ACTIVE_QUESTS } from "../systems/quests.js";
 import { MONSTERS } from "../data/monsters.js";
 import { MATERIALS, QUALITY_LABEL } from "../data/materials.js";
 import { ITEMS, CATEGORY_LABELS } from "../data/recipes.js";
@@ -60,7 +60,9 @@ export function openQuestBoard(refresh) {
     body.innerHTML = "";
     const active = state.quests?.active || [];
     const available = state.quests?.available || [];
-    body.appendChild(h("p", { class: "muted" }, "受託すると進捗が自動で記録されます。期限切れは名声 -2。"));
+    const atLimit = active.length >= MAX_ACTIVE_QUESTS;
+    body.appendChild(h("p", { class: "muted" },
+      `同時に受けられるのは ${MAX_ACTIVE_QUESTS} 件まで。期限切れは名声 -2。`));
     if (active.length > 0) {
       const sec = h("div", { class: "stack" });
       for (const q of active) {
@@ -79,7 +81,7 @@ export function openQuestBoard(refresh) {
           ],
         }));
       }
-      body.appendChild(panel(`受託中（${active.length}件）`, sec, "✦"));
+      body.appendChild(panel(`受託中（${active.length}/${MAX_ACTIVE_QUESTS}）`, sec, "✦"));
     }
     if (available.length > 0) {
       const sec = h("div", { class: "stack" });
@@ -87,12 +89,19 @@ export function openQuestBoard(refresh) {
         sec.appendChild(questCard(q, {
           isActive: false,
           actions: [
-            btn("受託する", () => {
-              acceptQuest(q.id);
+            btn(atLimit ? "受託枠が満杯" : "受託する", () => {
+              if (atLimit) { toast(`同時受託は ${MAX_ACTIVE_QUESTS} 件までです。`, { error: true }); return; }
+              const res = acceptQuest(q.id);
+              if (!res || res.ok === false) {
+                toast(res?.reason === "limit"
+                  ? `同時受託は ${MAX_ACTIVE_QUESTS} 件までです。`
+                  : "受託できませんでした。", { error: true });
+                return;
+              }
               toast(`「${q.title}」を受託しました。`);
               rerender();
               refresh && refresh();
-            }, { primary: true, small: true }),
+            }, { primary: !atLimit, ghost: atLimit, small: true, disabled: atLimit }),
           ],
         }));
       }

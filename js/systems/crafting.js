@@ -16,6 +16,28 @@ export function canCraft(recipeId) {
   return true;
 }
 
+// Predict the quality this recipe would produce *right now* using the
+// best-quality-first consumption rule. Returns null if not craftable.
+// RNG nudges (10% up / 5% down) are not modeled — this is the central
+// "expected" outcome that the player sees in the UI.
+export function predictCraftQuality(recipeId) {
+  const r = RECIPES[recipeId];
+  if (!r) return null;
+  const allQ = [];
+  for (const inp of r.inputs) {
+    let need = inp.n;
+    const stock = state.inventory.mats[inp.mat] || { fine: 0, good: 0, norm: 0, poor: 0 };
+    for (const q of ["fine", "good", "norm", "poor"]) {
+      const take = Math.min(need, stock[q] || 0);
+      for (let i = 0; i < take; i++) allQ.push(q);
+      need -= take;
+      if (need <= 0) break;
+    }
+    if (need > 0) return null;
+  }
+  return avgQuality(allQ);
+}
+
 export function craft(recipeId) {
   const r = RECIPES[recipeId];
   if (!r) return { ok: false, reason: "未知のレシピ" };

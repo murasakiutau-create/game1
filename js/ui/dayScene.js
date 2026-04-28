@@ -4,11 +4,12 @@ import { h, clear, btn, panel, tabs, modal, toast, spinner, confirmModal } from 
 import { state, totalMat, getMat, addItem, removeItem } from "../state.js";
 import { RECIPES, ITEMS, CATEGORY_LABELS, priceForItem } from "../data/recipes.js";
 import { MATERIALS, QUALITY_LABEL, QUALITY_LEVELS } from "../data/materials.js";
-import { canCraft, craft } from "../systems/crafting.js";
+import { canCraft, craft, predictCraftQuality } from "../systems/crafting.js";
 import { listOnShelf, unlistFromShelf } from "../systems/shop.js";
 import { itemIconKind, iconChip } from "./iconKind.js";
 
 let currentTab = "craft";
+let craftFilterCraftableOnly = true;
 
 export function renderDayScene(host, { onAdvance, refresh }) {
   clear(host);
@@ -38,22 +39,54 @@ export function renderDayScene(host, { onAdvance, refresh }) {
 }
 
 function renderCraftTab(refresh) {
+  const all = Object.values(RECIPES).filter(r => state.recipes[r.id]?.unlocked);
+  // Sort: craftable first, then by output basePrice ascending so cheap
+  // staples sit near the top of each group.
+  const sorted = [...all].sort((a, b) => {
+    const ac = canCraft(a.id) ? 0 : 1;
+    const bc = canCraft(b.id) ? 0 : 1;
+    if (ac !== bc) return ac - bc;
+    return (ITEMS[a.out]?.basePrice || 0) - (ITEMS[b.out]?.basePrice || 0);
+  });
+  const recipes = craftFilterCraftableOnly ? sorted.filter(r => canCraft(r.id)) : sorted;
+
+  const filterRow = h("div", { class: "row", style: { marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" } },
+    btn(craftFilterCraftableOnly ? "✓ 作れるものだけ" : "作れるものだけ", () => {
+      craftFilterCraftableOnly = !craftFilterCraftableOnly;
+      refresh();
+    }, { small: true, primary: craftFilterCraftableOnly, ghost: !craftFilterCraftableOnly }),
+    h("span", { class: "muted" },
+      craftFilterCraftableOnly
+        ? `${recipes.length} / ${all.length} 件表示中`
+        : `全 ${all.length} 件（うち調合可 ${all.filter(r => canCraft(r.id)).length} 件）`),
+  );
+
   const grid = h("div", { class: "card-grid" });
-  const recipes = Object.values(RECIPES).filter(r => state.recipes[r.id]?.unlocked);
-  if (recipes.length === 0) {
+  if (all.length === 0) {
     grid.appendChild(h("div", { class: "parchment-card empty" }, "解禁中のレシピがありません。"));
+  } else if (recipes.length === 0) {
+    grid.appendChild(h("div", { class: "parchment-card empty" },
+      "今ある素材で作れるレシピはありません。フィルタを外すと全レシピを表示します。"));
   }
   for (const r of recipes) {
     const item = ITEMS[r.out];
     const ok = canCraft(r.id);
+    const predicted = ok ? predictCraftQuality(r.id) : null;
+    const predictedPrice = predicted ? priceForItem(item.id, predicted) : null;
     grid.appendChild(h("div", { class: "parchment-card" + (ok ? "" : " disabled") },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name),
         h("span", { class: "tag" }, CATEGORY_LABELS[item.cat]),
       ),
       h("p", { class: "muted" }, item.blurb || ""),
-      h("div", { class: "muted" },
-        `相場 ${priceForItem(item.id, "poor")}〜${priceForItem(item.id, "fine")} G（品質次第）`),
+      ok
+        ? h("div", null,
+            h("strong", { style: { color: "var(--wax-soft)" } },
+              `予想品質：${QUALITY_LABEL[predicted]}　／　予想売値：${predictedPrice} G`),
+            h("div", { class: "muted" },
+              `相場 ${priceForItem(item.id, "poor")}〜${priceForItem(item.id, "fine")} G（品質次第）`))
+        : h("div", { class: "muted" },
+            `相場 ${priceForItem(item.id, "poor")}〜${priceForItem(item.id, "fine")} G（品質次第）`),
       h("div", { class: "muted" },
         h("div", null, "必要素材："),
         h("ul", null,
@@ -72,7 +105,8 @@ function renderCraftTab(refresh) {
       ),
     ));
   }
-  return panel(`調合可能なレシピ (${recipes.length})`, grid, "✦");
+  return panel(`調合可能なレシピ (${recipes.length}/${all.length})`,
+    h("div", null, filterRow, grid), "✦");
 }
 
 function renderShopTab(refresh) {
@@ -91,22 +125,33 @@ function renderShopTab(refresh) {
     const item = ITEMS[it.itemId];
     if (!item) continue;
     const askDefault = priceForItem(it.itemId, it.quality);
+    const priceInput = h("input", {
+      type: "number", min: 1,
+      value: String(askDefault),
+      style: { width: "6em" },
+      "aria-label": `${item.name} の売値`,
+    });
+    const readPrice = () => Math.max(1, parseInt(priceInput.value, 10) | 0);
     stock.appendChild(h("div", { class: "parchment-card" },
       h("div", { class: "row between" },
         h("strong", null, iconChip(itemIconKind(item)), item.name, " ", h("span", { class: "tag" }, QUALITY_LABEL[it.quality])),
         h("span", null, "在庫 " + it.count),
       ),
       h("div", { class: "muted" }, `相場 ${askDefault} G`),
+      h("div", { class: "row", style: { alignItems: "center", gap: "0.4rem" } },
+        h("label", null, "売値"),
+        priceInput,
+        h("span", { class: "muted" }, "G"),
+      ),
       h("div", { class: "row" },
         btn("棚に並べる(1)", () => {
-          listOnShelf(it.itemId, it.quality, 1, askDefault);
-          if (!removeItem(it.itemId, it.quality, 1)) {
-            // already counted? Adjust shelf back; but our flow above already removed.
-          }
+          listOnShelf(it.itemId, it.quality, 1, readPrice());
+          removeItem(it.itemId, it.quality, 1);
           refresh();
         }, { primary: true, small: true }),
         it.count >= 5 ? btn("5個並べる", () => {
-          listOnShelf(it.itemId, it.quality, 5, askDefault);
+          const price = readPrice();
+          listOnShelf(it.itemId, it.quality, 5, price);
           for (let i = 0; i < 5; i++) removeItem(it.itemId, it.quality, 1);
           refresh();
         }, { ghost: true, small: true }) : null,

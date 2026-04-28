@@ -8,6 +8,8 @@ import { ITEMS } from "../data/recipes.js";
 import { QUALITY_LEVELS } from "../data/materials.js";
 import { pushLog } from "./log.js";
 
+export const MAX_ACTIVE_QUESTS = 3;
+
 let questCounter = 1;
 function newQuestId() { return "q_" + (questCounter++).toString(36) + "_" + Math.floor(Math.random() * 1e6).toString(36); }
 
@@ -62,10 +64,12 @@ export function refreshQuests() {
 }
 
 // Accept a quest: move it from available to active, record deadline.
+// Caps active list at MAX_ACTIVE_QUESTS.
 export function acceptQuest(qid) {
   ensureShape();
+  if (state.quests.active.length >= MAX_ACTIVE_QUESTS) return { ok: false, reason: "limit" };
   const idx = state.quests.available.findIndex(q => q.id === qid);
-  if (idx < 0) return false;
+  if (idx < 0) return { ok: false, reason: "missing" };
   const q = state.quests.available[idx];
   state.quests.available.splice(idx, 1);
   state.quests.active.push({
@@ -74,7 +78,7 @@ export function acceptQuest(qid) {
     deadline: state.day + (q.duration || 3),
   });
   pushLog({ kind: "system", summary: `依頼「${q.title}」を受託した。` });
-  return true;
+  return { ok: true };
 }
 
 export function cancelQuest(qid) {
