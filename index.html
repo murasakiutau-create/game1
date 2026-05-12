@@ -3,565 +3,318 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>遺跡探索クラシックRPG</title>
+  <title>星降る村の小さな冒険 - RPGツクール風HTML RPG</title>
   <style>
-    :root {
-      --bg:#020617;
-      --panel:#000;
-      --line:#d1d5db;
-      --text:#f8fafc;
-      --hp:#22c55e;
-      --mp:#38bdf8;
-      --warn:#f59e0b;
+    :root{
+      --ink:#1d1b2e;
+      --paper:#fff8dc;
+      --panel:#10223f;
+      --panel2:#071426;
+      --line:#f3e8b0;
+      --accent:#ffd166;
+      --good:#7bd88f;
+      --bad:#ff6b6b;
+      --sky:#6ec6ff;
     }
     *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:#0b1024;color:#fff;font-family:"MS Gothic","Yu Gothic",monospace;}
     body{
-      margin:0;
-      background:#111827;
-      color:var(--text);
-      font-family:"MS Gothic","Yu Gothic",monospace;
+      display:grid;place-items:center;padding:18px;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(110,198,255,.18), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(255,209,102,.14), transparent 24%),
+        linear-gradient(180deg,#08152f,#0b1024 54%,#070914);
     }
-    .screen{
-      max-width:1200px;
-      margin:0 auto;
-      padding:8px;
-      display:grid;
-      grid-template-rows:auto auto;
-      gap:8px;
-      min-height:100vh;
-    }
-    .frame{
-      border:4px solid #e5e7eb;
-      border-radius:12px;
-      background:var(--panel);
-      box-shadow:inset 0 0 0 2px #111827;
-      overflow:hidden;
-    }
-    .top{
-      display:grid;
-      grid-template-columns:2fr 1fr;
-      gap:8px;
-      min-height:52vh;
-    }
-    .map-wrap{ position:relative; background:#000; }
-    #mapCanvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
-    .area-label{
-      position:absolute;
-      top:10px; left:10px;
-      border:3px solid var(--line);
-      border-radius:10px;
-      background:rgba(0,0,0,.9);
-      padding:8px 12px;
-      font-size:1.2rem;
-      letter-spacing:1px;
-    }
-
-    .status{
-      display:grid;
-      grid-template-rows:auto 1fr auto;
-      background:#030712;
-    }
-    .status h2{
-      margin:0;
-      padding:10px;
-      border-bottom:3px solid var(--line);
-      font-size:1.1rem;
-    }
-    .party-list{ padding:8px; display:grid; gap:8px; overflow:auto; }
-    .member{ border:2px solid var(--line); border-radius:8px; padding:6px; background:#000; }
-    .member-top{ display:flex; justify-content:space-between; align-items:center; }
-    .bars{ margin-top:4px; display:grid; gap:4px; }
-    .bar{ height:10px; border:1px solid #64748b; background:#0f172a; }
-    .bar > div{ height:100%; }
-    .hp{ background:var(--hp); }
-    .mp{ background:var(--mp); }
-    .gold{ border-top:3px solid var(--line); padding:10px; font-size:1.4rem; text-align:center; }
-
-    .bottom{
-      display:grid;
-      grid-template-columns:2fr 1fr;
-      gap:8px;
-      min-height:42vh;
-    }
-    .battle-col{ display:grid; grid-template-rows:1fr auto auto; gap:8px; }
-    .battle-stage{
-      position:relative;
-      background:radial-gradient(circle at 50% 10%, #374151 0%, #111827 55%, #000 100%);
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-      gap:40px;
-      padding:24px;
-    }
-    .enemy{
-      font-size:64px;
-      filter: drop-shadow(0 6px 0 rgba(0,0,0,.5));
-      transition:transform .15s;
-    }
-    .enemy.hit{ transform:translateY(-6px) scale(1.08); }
-    .message{ padding:10px; font-size:1.15rem; line-height:1.55; min-height:82px; white-space:pre-line; }
-
-    .cmd-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .menu{ padding:8px; display:grid; gap:6px; }
-    button{
-      border:2px solid var(--line);
-      border-radius:8px;
-      background:#000;
-      color:var(--text);
-      padding:8px;
-      font-family:inherit;
-      font-size:1.05rem;
-      text-align:left;
-    }
-    button.active, button:hover{ background:#1e293b; }
-
-    .log{ padding:8px; overflow:auto; }
-    .log h3{ margin:0 0 8px; border-bottom:2px solid var(--line); padding-bottom:4px; }
-    .log-entry{ margin:0 0 4px; }
-    .warn{ color:var(--warn); }
-
-    .mobile-pad{ display:none; grid-template-columns:repeat(3,56px); gap:6px; justify-content:center; padding:8px; }
-    .mobile-pad button{ text-align:center; }
-
-    @media (max-width: 980px){
-      .top, .bottom{ grid-template-columns:1fr; }
-      .screen{ min-height:auto; }
-      .map-wrap{ min-height:340px; }
-      .battle-stage{ min-height:190px; }
-      .mobile-pad{ display:grid; }
-    }
+    .shell{width:min(1100px,100%);display:grid;gap:12px;}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+    h1{margin:0;color:var(--accent);font-size:clamp(22px,4vw,36px);text-shadow:3px 3px 0 #000;letter-spacing:.06em;}
+    .help{margin:0;color:#dce7ff;font-size:14px;line-height:1.6;}
+    .game{display:grid;grid-template-columns:minmax(320px,736px) 1fr;gap:12px;align-items:start;}
+    .screen-card,.side-card,.message-box,.controls{border:4px solid var(--line);background:var(--panel2);box-shadow:0 10px 0 rgba(0,0,0,.35), inset 0 0 0 3px #000;border-radius:10px;}
+    .screen-card{position:relative;overflow:hidden;background:#000;}
+    canvas{display:block;width:100%;image-rendering:pixelated;aspect-ratio:23/15;background:#000;}
+    .place{position:absolute;left:12px;top:12px;padding:6px 10px;border:3px solid #fff;background:rgba(0,0,0,.78);border-radius:8px;text-shadow:2px 2px #000;}
+    .side-card{padding:12px;display:grid;gap:12px;}
+    .status-title{margin:0;color:var(--accent);font-size:20px;border-bottom:2px solid #44628f;padding-bottom:6px;}
+    .stat{display:grid;gap:5px;background:#12284a;border:2px solid #44628f;border-radius:8px;padding:10px;}
+    .stat-row{display:flex;justify-content:space-between;gap:8px;}
+    .meter{height:14px;border:2px solid #071426;background:#02050a;border-radius:7px;overflow:hidden;}
+    .meter>i{display:block;height:100%;background:linear-gradient(90deg,#26d07c,#c5f467);}
+    .meter.mp>i{background:linear-gradient(90deg,#4cc9f0,#90e0ef)}
+    .inventory{display:flex;flex-wrap:wrap;gap:8px;}
+    .chip{padding:6px 8px;background:#08152f;border:2px solid #44628f;border-radius:999px;}
+    .message-box{min-height:92px;padding:14px 16px;font-size:18px;line-height:1.55;white-space:pre-line;}
+    .hud{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;}
+    .controls{padding:10px;display:grid;gap:8px;}
+    .buttons{display:grid;grid-template-columns:repeat(3,50px);gap:6px;justify-content:center;}
+    button{font:inherit;color:#fff;background:#14335f;border:3px solid #cfe5ff;border-radius:8px;padding:10px;box-shadow:0 4px 0 #000;cursor:pointer;}
+    button:hover,button:focus{background:#23508d;outline:2px solid var(--accent);}
+    button:active{transform:translateY(2px);box-shadow:0 2px 0 #000;}
+    .wide{grid-column:span 3;}
+    .legend{font-size:13px;color:#dce7ff;line-height:1.6;}
+    .asset-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+    .asset{background:#08152f;border:2px solid #44628f;border-radius:8px;padding:6px;text-align:center;font-size:12px;color:#dce7ff;}
+    .asset canvas{width:48px;height:48px;margin:auto;aspect-ratio:1/1;}
+    .flash{animation:flash .25s steps(2) 3}
+    @keyframes flash{50%{filter:brightness(2.4) saturate(1.8)}}
+    @media(max-width:850px){.game,.hud{grid-template-columns:1fr}.controls{order:-1}.message-box{font-size:16px}.buttons{grid-template-columns:repeat(3,56px)}}
   </style>
 </head>
 <body>
-  <div class="screen">
-    <section class="top">
-      <div class="frame map-wrap">
-        <canvas id="mapCanvas" width="768" height="480"></canvas>
-        <div class="area-label" id="areaLabel">古びた地下遺跡 B1F</div>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>星降る村の小さな冒険</h1>
+        <p class="help">RPGツクール風のタイルマップ、ドット絵アセット、村人会話、宝箱、戦闘を1枚のHTMLで実装。</p>
+      </div>
+      <p class="help">移動: 矢印/WASD　決定: Space/Enter</p>
+    </header>
+
+    <section class="game">
+      <div class="screen-card" id="screenCard">
+        <canvas id="game" width="736" height="480" aria-label="RPG game screen"></canvas>
+        <div class="place" id="place">星降る村</div>
       </div>
 
-      <aside class="frame status">
-        <h2>パーティステータス</h2>
-        <div id="partyList" class="party-list"></div>
-        <div class="gold" id="gold">1250 G</div>
+      <aside class="side-card">
+        <h2 class="status-title">勇者メニュー</h2>
+        <div class="stat">
+          <div class="stat-row"><b>ルナ</b><span>Lv <span id="lv">1</span></span></div>
+          <div>HP <span id="hpText"></span></div><div class="meter"><i id="hpBar"></i></div>
+          <div>MP <span id="mpText"></span></div><div class="meter mp"><i id="mpBar"></i></div>
+          <div class="stat-row"><span>GOLD</span><b id="gold">0G</b></div>
+        </div>
+        <div>
+          <h2 class="status-title">もちもの</h2>
+          <div class="inventory" id="items"></div>
+        </div>
+        <div>
+          <h2 class="status-title">ドット絵アセット</h2>
+          <div class="asset-strip" id="assetStrip"></div>
+        </div>
+        <p class="legend">草むらはランダムエンカウント、看板・村人・宝箱・階段は正面で決定。宿屋で回復できます。</p>
       </aside>
     </section>
 
-    <section class="bottom">
-      <div class="battle-col">
-        <div class="frame battle-stage" id="battleStage"></div>
-        <div class="frame message" id="message"></div>
-        <div class="cmd-row">
-          <div class="frame menu" id="commandMenu"></div>
-          <div class="frame menu" id="subMenu"></div>
+    <section class="hud">
+      <div class="message-box" id="message">ようこそ、星降る村へ。まずは村人に話しかけてみよう。</div>
+      <div class="controls">
+        <div class="buttons">
+          <span></span><button data-dir="up">↑</button><span></span>
+          <button data-dir="left">←</button><button id="action">決定</button><button data-dir="right">→</button>
+          <span></span><button data-dir="down">↓</button><span></span>
+          <button class="wide" id="restart">はじめから</button>
         </div>
-        <div class="mobile-pad">
-          <div></div><button data-move="up">↑</button><div></div>
-          <button data-move="left">←</button><button id="actBtn">決定</button><button data-move="right">→</button>
-          <div></div><button data-move="down">↓</button><div></div>
-        </div>
-      </div>
-
-      <div class="frame log" id="log">
-        <h3>ログ</h3>
       </div>
     </section>
-  </div>
+  </main>
 
   <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
     const TILE = 32;
-    const MAP_W = 24;
-    const MAP_H = 15;
-
-    const tiles = { VOID:0, FLOOR:1, WALL:2, STAIRS:3, CHEST:4, WATER:5 };
-    const palette = {
-      0:'#000000',
-      1:'#475569',
-      2:'#374151',
-      3:'#d97706',
-      4:'#f59e0b',
-      5:'#1d4ed8'
+    const W = 23;
+    const H = 15;
+    const tiles = {
+      '.':'grass', ',':'flower', '#':'tree', '=':'path', '~':'water', 'H':'house', 'I':'inn', 'S':'sign', 'C':'chest', '^':'stairs', 'N':'npc', 'M':'monster'
     };
-
-    const party = [
-      { name:'アレス', job:'戦士', lv:16, hp:120, maxHp:120, mp:36, maxMp:36, atk:22, icon:'🛡️' },
-      { name:'リリア', job:'魔法使い', lv:16, hp:80, maxHp:80, mp:52, maxMp:52, atk:14, icon:'🔮' },
-      { name:'マックス', job:'盗賊', lv:17, hp:150, maxHp:150, mp:18, maxMp:18, atk:20, icon:'🗡️' },
-      { name:'セリナ', job:'僧侶', lv:16, hp:90, maxHp:90, mp:78, maxMp:78, atk:12, icon:'✨' }
+    const mapRows = [
+      '#######################',
+      '#....,,,,....#....C...#',
+      '#..H..====...#..~~~...#',
+      '#.....=S==......~~~...#',
+      '#..N..====...#........#',
+      '#.........####....#####',
+      '#..====.........,,,...#',
+      '#..=II=..~~~~....M....#',
+      '#..====..~~~~.........#',
+      '#........~~~~....====.#',
+      '#####............=^^=.#',
+      '#...C..,,........====.#',
+      '#.......,,..N.........#',
+      '#.....................#',
+      '#######################'
     ];
+    let map = mapRows.map(row => [...row]);
 
-    const state = {
-      gold:1250,
-      floor:1,
-      map:[],
-      player:{ x:2, y:2 },
-      mode:'explore',
-      encounterRate:0.11,
-      enemies:[],
-      message:'↑↓←→ で移動。宝箱と階段を探そう。',
-      selectedCommand:0
+    const player = {x:3,y:12,dir:'down',step:0,lv:1,hp:38,maxHp:38,mp:12,maxMp:12,gold:80,items:['薬草']};
+    const npcs = {
+      '4,4':['村人ポポ','北の宝箱には旅立ちの石があるよ。草むらの魔物には気をつけて！'],
+      '11,12':['賢者ミト','階段の先には星の欠片が眠る。HPが減ったら宿屋へ戻るのじゃ。']
+    };
+    const passable = new Set(['.',',','=','S','C','^','N','M']);
+    const messages = {
+      S:'看板「星降る村　←宿屋　→星見の丘」',
+      H:'小さな家だ。煙突からパンの香りがする。',
+      I:'宿屋で休んだ。HPとMPが全回復！',
+      '^':'石段の向こうに星明かりの洞窟が見える。まだHTML版の続きは準備中。'
     };
 
-    const commandList = ['たたかう','まほう','どうぐ','にげる'];
-    const mapCanvas = document.getElementById('mapCanvas');
-    const ctx = mapCanvas.getContext('2d');
+    const sprites = {
+      hero:[
+        '000222000','002222200','006666600','066776660','066666660','003333000','033333300','030303030','000404000','004040400','040000040','000000000'
+      ],
+      npc:[
+        '000555000','005555500','008888800','088998880','088888880','000777000','007777700','070707070','000606000','006060600','060000060','000000000'
+      ],
+      slime:[
+        '000000000','000000000','000aaa000','00aaaaa00','0aabbaa0','0aaaaaa0','00a99a00','000aa000','000000000'
+      ],
+      chest:[
+        '000000000','00bbbb000','0bccccb00','0bddddb00','0bccccb00','0bcdccb00','0bbbbbb00','000000000'
+      ],
+      star:[
+        '000d00000','000d00000','0dddddd00','00ddd000','00ddd000','0dd0dd000','0d000d000','000000000'
+      ],
+      tree:[
+        '000e00000','00eee0000','0eeeee000','00eee0000','0eeeee000','eee0eee00','000f00000','000f00000'
+      ]
+    };
+    const pal = {0:null,2:'#243b8f',3:'#2f7d32',4:'#6b3f1d',5:'#8c5fbf',6:'#5ac8fa',7:'#f4c2c2',8:'#f4a261',9:'#111',a:'#76d275',b:'#6b3f1d',c:'#d18b2f',d:'#ffe066',e:'#1f9d55',f:'#7a4a22'};
 
-    function log(text, cls='') {
-      const box = document.getElementById('log');
-      const d = document.createElement('div');
-      d.className = `log-entry ${cls}`;
-      d.textContent = `• ${text}`;
-      box.appendChild(d);
-      box.scrollTop = box.scrollHeight;
+    function drawPixelSprite(pattern, x, y, scale=3, flip=false){
+      pattern.forEach((row, ry) => [...row].forEach((key, rx) => {
+        const color = pal[key];
+        if(!color) return;
+        ctx.fillStyle = color;
+        const px = flip ? x + (row.length - 1 - rx) * scale : x + rx * scale;
+        ctx.fillRect(px, y + ry * scale, scale, scale);
+      }));
     }
 
-    function setMessage(text) {
-      state.message = text;
-      document.getElementById('message').textContent = text;
-    }
-
-    function generateDungeon() {
-      state.map = Array.from({length:MAP_H}, () => Array(MAP_W).fill(tiles.VOID));
-      const rooms = [];
-
-      for (let i=0;i<6;i++) {
-        const rw = 4 + Math.floor(Math.random()*4);
-        const rh = 3 + Math.floor(Math.random()*4);
-        const rx = 1 + Math.floor(Math.random()*(MAP_W-rw-2));
-        const ry = 1 + Math.floor(Math.random()*(MAP_H-rh-2));
-        rooms.push({x:rx,y:ry,w:rw,h:rh,cx:rx+Math.floor(rw/2),cy:ry+Math.floor(rh/2)});
-
-        for (let y=ry;y<ry+rh;y++) {
-          for (let x=rx;x<rx+rw;x++) state.map[y][x]=tiles.FLOOR;
-        }
+    function drawTile(kind, x, y){
+      const px=x*TILE, py=y*TILE;
+      if(kind === 'grass' || kind === 'flower'){
+        ctx.fillStyle = '#55b957'; ctx.fillRect(px,py,TILE,TILE);
+        ctx.fillStyle = '#3f9f45'; for(let i=0;i<4;i++) ctx.fillRect(px+((x*11+i*9)%28), py+((y*7+i*13)%28), 4, 4);
+        if(kind==='flower'){ctx.fillStyle='#ffd166';ctx.fillRect(px+10,py+8,4,4);ctx.fillStyle='#ff70a6';ctx.fillRect(px+22,py+20,4,4)}
       }
-
-      for (let i=1;i<rooms.length;i++) {
-        const a = rooms[i-1], b = rooms[i];
-        for (let x=Math.min(a.cx,b.cx); x<=Math.max(a.cx,b.cx); x++) state.map[a.cy][x]=tiles.FLOOR;
-        for (let y=Math.min(a.cy,b.cy); y<=Math.max(a.cy,b.cy); y++) state.map[y][b.cx]=tiles.FLOOR;
+      if(kind === 'path'){
+        ctx.fillStyle = '#c49a6c'; ctx.fillRect(px,py,TILE,TILE);
+        ctx.fillStyle = '#a87c52'; ctx.fillRect(px+2,py+26,8,3); ctx.fillRect(px+18,py+8,10,3);
       }
-
-      for (let y=1;y<MAP_H-1;y++) {
-        for (let x=1;x<MAP_W-1;x++) {
-          if (state.map[y][x]!==tiles.VOID) {
-            for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
-              if (state.map[y+dy][x+dx]===tiles.VOID) state.map[y+dy][x+dx]=tiles.WALL;
-            }
-          }
-        }
+      if(kind === 'tree'){
+        ctx.fillStyle = '#236b3b'; ctx.fillRect(px,py,TILE,TILE);
+        drawPixelSprite(sprites.tree, px+2, py+4, 3);
       }
-
-      rooms.slice(0,3).forEach(r => { state.map[r.cy][r.cx] = tiles.CHEST; });
-      const last = rooms[rooms.length-1];
-      state.map[last.cy][last.cx] = tiles.STAIRS;
-      state.player.x = rooms[0].cx;
-      state.player.y = rooms[0].cy;
-
-      const waterRoom = rooms[1] || rooms[0];
-      for (let y=waterRoom.y+1; y<waterRoom.y+waterRoom.h-1; y++) {
-        for (let x=waterRoom.x+1; x<waterRoom.x+waterRoom.w-1; x++) {
-          if (Math.random() < 0.4 && state.map[y][x] === tiles.FLOOR) state.map[y][x] = tiles.WATER;
-        }
+      if(kind === 'water'){
+        ctx.fillStyle = '#2477c7'; ctx.fillRect(px,py,TILE,TILE);
+        ctx.fillStyle = '#8de4ff'; ctx.fillRect(px+4,py+10+(x+y)%6,12,3); ctx.fillRect(px+18,py+22-(x%3),10,3);
+      }
+      if(kind === 'house' || kind === 'inn'){
+        ctx.fillStyle = '#55b957'; ctx.fillRect(px,py,TILE,TILE);
+        ctx.fillStyle = kind==='inn' ? '#cc2936' : '#8d5524'; ctx.fillRect(px+3,py+9,26,18);
+        ctx.fillStyle = '#f5d6a0'; ctx.fillRect(px+7,py+15,7,7); ctx.fillRect(px+18,py+15,7,12);
+        ctx.fillStyle = '#5e2b12'; ctx.fillRect(px+1,py+5,30,7);
+      }
+      if(kind === 'sign'){
+        drawTile('grass',x,y); ctx.fillStyle='#7a4a22'; ctx.fillRect(px+14,py+14,4,14); ctx.fillStyle='#d9a441'; ctx.fillRect(px+7,py+8,18,10);
+      }
+      if(kind === 'chest'){
+        drawTile('grass',x,y); drawPixelSprite(sprites.chest, px+3, py+6, 3);
+      }
+      if(kind === 'stairs'){
+        drawTile('path',x,y); ctx.fillStyle='#6b7280'; for(let i=0;i<4;i++) ctx.fillRect(px+6+i*3,py+8+i*5,20-i*4,4);
+      }
+      if(kind === 'npc'){
+        drawTile('grass',x,y); drawPixelSprite(sprites.npc, px+3, py+0, 3);
+      }
+      if(kind === 'monster'){
+        drawTile('grass',x,y); drawPixelSprite(sprites.slime, px+3, py+8, 3);
       }
     }
 
-    function drawMap() {
-      const w = mapCanvas.width / MAP_W;
-      const h = mapCanvas.height / MAP_H;
-      ctx.clearRect(0,0,mapCanvas.width,mapCanvas.height);
-
-      for (let y=0;y<MAP_H;y++) {
-        for (let x=0;x<MAP_W;x++) {
-          const t = state.map[y][x];
-          ctx.fillStyle = palette[t] || '#000';
-          ctx.fillRect(x*w,y*h,w,h);
-          if (t===tiles.WALL) {
-            ctx.fillStyle='rgba(0,0,0,.35)';
-            ctx.fillRect(x*w,y*h,w,5);
-          }
-          if (t===tiles.WATER) {
-            ctx.fillStyle='rgba(255,255,255,.15)';
-            ctx.fillRect(x*w,y*h,w,2);
-          }
-          if (t===tiles.CHEST) {
-            ctx.fillStyle='#fbbf24';
-            ctx.fillRect(x*w+8,y*h+8,w-16,h-16);
-          }
-        }
-      }
-
-      const px = state.player.x*w;
-      const py = state.player.y*h;
-      ctx.fillStyle='#93c5fd';
-      ctx.fillRect(px+8,py+6,w-16,h-12);
-      ctx.fillStyle='#1e3a8a';
-      ctx.fillRect(px+11,py+h-12,w-22,8);
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let y=0;y<H;y++) for(let x=0;x<W;x++) drawTile(tiles[map[y][x]],x,y);
+      drawPixelSprite(sprites.hero, player.x*TILE+3, player.y*TILE+0, 3, player.dir==='left');
+      ctx.fillStyle='rgba(0,0,0,.28)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle='rgba(255,255,255,.08)';
+      for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*TILE,0);ctx.lineTo(x*TILE,H*TILE);ctx.stroke();}
+      for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*TILE);ctx.lineTo(W*TILE,y*TILE);ctx.stroke();}
     }
 
-    function renderParty() {
-      const root = document.getElementById('partyList');
-      root.innerHTML = '';
-      party.forEach(m => {
-        const node = document.createElement('div');
-        node.className = 'member';
-        node.innerHTML = `
-          <div class="member-top"><b>${m.icon} ${m.name}</b><span>${m.job} Lv${m.lv}</span></div>
-          <div class="bars">
-            <div>HP ${m.hp}/${m.maxHp}<div class="bar"><div class="hp" style="width:${(m.hp/m.maxHp)*100}%"></div></div></div>
-            <div>MP ${m.mp}/${m.maxMp}<div class="bar"><div class="mp" style="width:${(m.mp/m.maxMp)*100}%"></div></div></div>
-          </div>`;
-        root.appendChild(node);
-      });
-      document.getElementById('gold').textContent = `${state.gold} G`;
-      document.getElementById('areaLabel').textContent = `古びた地下遺跡 B${state.floor}F`;
+    function front(){
+      const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[player.dir];
+      return {x:player.x+d[0], y:player.y+d[1]};
     }
-
-    function renderMenus() {
-      const menu = document.getElementById('commandMenu');
-      menu.innerHTML = '';
-      commandList.forEach((name, idx) => {
-        const b = document.createElement('button');
-        b.textContent = `▶ ${name}`;
-        if (state.selectedCommand === idx) b.classList.add('active');
-        b.onclick = () => runCommand(idx);
-        menu.appendChild(b);
-      });
-
-      const sub = document.getElementById('subMenu');
-      if (state.mode === 'explore') {
-        sub.innerHTML = `
-          <button id="hintBtn">しらべる</button>
-          <button id="descBtn">このゲームについて</button>
-          <button id="healBtn">全体回復(10G)</button>`;
-        document.getElementById('hintBtn').onclick = inspectTile;
-        document.getElementById('descBtn').onclick = () => setMessage('クラシックRPG風UIデモ。探索→遭遇→コマンド戦闘の流れです。');
-        document.getElementById('healBtn').onclick = healParty;
+    function say(text){document.getElementById('message').textContent=text;}
+    function at(x,y){return map[y]?.[x] || '#';}
+    function move(dir){
+      player.dir = dir;
+      const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[dir];
+      const nx=player.x+d[0], ny=player.y+d[1];
+      const tile = at(nx,ny);
+      if(passable.has(tile) && tile !== 'N' && tile !== 'C' && tile !== 'S' && tile !== 'M'){
+        player.x=nx; player.y=ny; player.step++;
+        if(tile===',' && Math.random()<0.18) battle(false);
+        else say('草の匂いと8bitの風が流れている。');
+      } else if(tile==='#') say('木が道をふさいでいる。');
+      else if(tile==='~') say('水が深くて渡れない。');
+      else say('正面を調べるには決定ボタン。');
+      draw(); updateUi();
+    }
+    function action(){
+      const f=front(); const tile=at(f.x,f.y);
+      if(tile==='N') return say(npcs[`${f.x},${f.y}`]?.join('「') + '」');
+      if(tile==='C') { map[f.y][f.x]='.'; player.gold+=120; player.items.push('星の欠片'); say('宝箱を開けた！ 120Gと星の欠片を手に入れた。'); }
+      else if(tile==='I'){ player.hp=player.maxHp; player.mp=player.maxMp; say(messages.I); }
+      else if(tile==='M'){ battle(true); map[f.y][f.x]='.'; }
+      else if(messages[tile]) say(messages[tile]);
+      else say('そこには何もない。');
+      draw(); updateUi();
+    }
+    function battle(fixed){
+      const enemy = fixed ? '森のスライムキング' : 'ぷるぷるスライム';
+      const dmg = fixed ? 13 : 7;
+      const reward = fixed ? 160 : 35;
+      const screen = document.getElementById('screenCard');
+      screen.classList.add('flash'); setTimeout(()=>screen.classList.remove('flash'), 800);
+      if(player.hp > dmg + 5){
+        player.hp -= dmg; player.gold += reward; player.lv += fixed ? 1 : 0;
+        say(`${enemy}があらわれた！\nルナの勇気の一撃！ 勝利した。${reward}Gを獲得。`);
       } else {
-        sub.innerHTML = '<button onclick="window.advanceTurn()">ターン進行</button><button onclick="window.escapeBattle()">にげる</button>';
+        player.hp = Math.max(1, Math.floor(player.maxHp/2));
+        player.gold = Math.max(0, player.gold-20);
+        say(`${enemy}に押し戻された……。村の入口まで退却し、20Gを落とした。`);
+        player.x=3; player.y=12;
       }
     }
-
-    function healParty() {
-      if (state.gold < 10) return setMessage('お金が足りない。');
-      state.gold -= 10;
-      party.forEach(m => { m.hp = Math.min(m.maxHp, m.hp+25); m.mp = Math.min(m.maxMp, m.mp+12); });
-      setMessage('薬草を使って回復した。');
-      renderParty();
-      log('パーティを回復した。');
+    function updateUi(){
+      document.getElementById('lv').textContent=player.lv;
+      document.getElementById('hpText').textContent=`${player.hp}/${player.maxHp}`;
+      document.getElementById('mpText').textContent=`${player.mp}/${player.maxMp}`;
+      document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;
+      document.getElementById('mpBar').style.width=`${player.mp/player.maxMp*100}%`;
+      document.getElementById('gold').textContent=`${player.gold}G`;
+      document.getElementById('items').innerHTML=player.items.map(i=>`<span class="chip">${i}</span>`).join('');
     }
+    function restart(){ location.reload(); }
 
-    function inspectTile() {
-      const t = state.map[state.player.y][state.player.x];
-      if (t === tiles.CHEST) setMessage('宝箱がある。決定キー(Enter)で開ける。');
-      else if (t === tiles.STAIRS) setMessage('下り階段だ。決定キーで次のフロアへ。');
-      else if (t === tiles.WATER) setMessage('水場だ。足元が滑りやすい。');
-      else setMessage('石造りの通路が続いている。');
-    }
-
-    function canWalk(x,y){
-      if (x<0||y<0||x>=MAP_W||y>=MAP_H) return false;
-      const t = state.map[y][x];
-      return t !== tiles.VOID && t !== tiles.WALL;
-    }
-
-    function move(dx,dy){
-      if (state.mode !== 'explore') return;
-      const nx = state.player.x + dx;
-      const ny = state.player.y + dy;
-      if (!canWalk(nx,ny)) return;
-      state.player.x = nx; state.player.y = ny;
-      drawMap();
-
-      if (Math.random() < state.encounterRate) startBattle();
-    }
-
-    function interact(){
-      if (state.mode === 'battle') {
-        runCommand(0);
-        return;
-      }
-      const t = state.map[state.player.y][state.player.x];
-      if (t === tiles.CHEST) {
-        const g = 30 + Math.floor(Math.random()*90);
-        state.gold += g;
-        state.map[state.player.y][state.player.x] = tiles.FLOOR;
-        setMessage(`宝箱を開けた！ ${g}G を手に入れた。`);
-        log(`${g}G を入手。`);
-        renderParty(); drawMap();
-      } else if (t === tiles.STAIRS) {
-        state.floor += 1;
-        state.encounterRate = Math.min(0.2, state.encounterRate + 0.01);
-        generateDungeon();
-        setMessage(`B${state.floor}F に降りた…`);
-        log(`フロア移動: B${state.floor}F`);
-        renderAll();
-      } else {
-        inspectTile();
-      }
-    }
-
-    function randomEnemy(){
-      const table = [
-        {name:'スライムA', hp:35, atk:8, icon:'💧'},
-        {name:'ゴブリン', hp:55, atk:11, icon:'👹'},
-        {name:'スケルトン', hp:50, atk:12, icon:'💀'},
-        {name:'コウモリ', hp:28, atk:9, icon:'🦇'}
-      ];
-      return {...table[Math.floor(Math.random()*table.length)]};
-    }
-
-    function startBattle(){
-      state.mode = 'battle';
-      state.enemies = [randomEnemy(), randomEnemy()].filter((_,i)=> i===0 || Math.random()>0.35);
-      setMessage(state.enemies.map(e => `${e.name} が あらわれた！`).join('\n'));
-      renderBattle();
-      renderMenus();
-      log('敵と遭遇した！', 'warn');
-    }
-
-    function renderBattle(){
-      const stage = document.getElementById('battleStage');
-      stage.innerHTML = '';
-      if (state.mode !== 'battle') {
-        stage.innerHTML = '<div style="font-size:1.4rem;opacity:.85;">探索中…（敵に遭遇するとここに表示）</div>';
-        return;
-      }
-      state.enemies.forEach(e => {
-        const d = document.createElement('div');
-        d.className = 'enemy';
-        d.textContent = e.icon;
-        d.title = `${e.name} HP:${e.hp}`;
-        stage.appendChild(d);
-      });
-    }
-
-    function runCommand(idx){
-      if (state.mode !== 'battle') {
-        state.selectedCommand = idx;
-        const text = ['探索中は移動して敵を探そう。','戦闘中に使える。','道具は開発中。','探索中。'][idx];
-        setMessage(text);
-        renderMenus();
-        return;
-      }
-
-      if (idx === 3) return escapeBattle();
-      if (idx === 2) return setMessage('どうぐは現在調整中…');
-      if (idx === 1) {
-        const mage = party[1];
-        if (mage.mp < 8) return setMessage('MPが足りない！');
-        mage.mp -= 8;
-        const dmg = 24 + Math.floor(Math.random()*12);
-        state.enemies.forEach(e => e.hp -= dmg);
-        setMessage(`リリアのファイア！ 全体に ${dmg} ダメージ！`);
-        animateHit();
-      } else {
-        const alive = party.filter(p => p.hp > 0);
-        const target = state.enemies[0];
-        const sumAtk = alive.reduce((a,b)=>a+b.atk,0);
-        const dmg = Math.round(sumAtk * (0.45 + Math.random()*0.3));
-        target.hp -= dmg;
-        setMessage(`総攻撃！ ${target.name} に ${dmg} ダメージ！`);
-        animateHit();
-      }
-
-      state.enemies = state.enemies.filter(e => e.hp > 0);
-      if (!state.enemies.length) return winBattle();
-      enemyTurn();
-      renderParty();
-      renderBattle();
-    }
-
-    function animateHit(){
-      document.querySelectorAll('.enemy').forEach(el => {
-        el.classList.add('hit');
-        setTimeout(() => el.classList.remove('hit'), 120);
-      });
-    }
-
-    function enemyTurn(){
-      const alive = party.filter(p => p.hp > 0);
-      state.enemies.forEach(e => {
-        const t = alive[Math.floor(Math.random()*alive.length)];
-        const dmg = Math.max(5, Math.round(e.atk * (0.6 + Math.random()*0.6)));
-        t.hp = Math.max(0, t.hp - dmg);
-        log(`${e.name} の攻撃！ ${t.name} に ${dmg} ダメージ`, 'warn');
-      });
-      if (party.every(p => p.hp <= 0)) {
-        party.forEach(p => p.hp = Math.round(p.maxHp*0.4));
-        state.gold = Math.max(0, state.gold - 120);
-        state.mode = 'explore';
-        setMessage('全滅した…街へ戻され、120Gを失った。');
-        log('全滅して撤退した。', 'warn');
-        renderAll();
-      }
-    }
-
-    function winBattle(){
-      const g = 40 + Math.floor(Math.random()*55) + state.floor*8;
-      state.gold += g;
-      party.forEach(p => {
-        if (p.hp > 0) {
-          p.hp = Math.min(p.maxHp, p.hp + 6);
-          p.mp = Math.min(p.maxMp, p.mp + 3);
-        }
-      });
-      state.mode = 'explore';
-      setMessage(`勝利！ ${g}G を手に入れた。`);
-      log(`戦闘勝利。${g}G 獲得。`);
-      renderAll();
-    }
-
-    function escapeBattle(){
-      if (state.mode !== 'battle') return;
-      if (Math.random() < 0.65) {
-        state.mode = 'explore';
-        setMessage('うまく逃げ切った。');
-        log('戦闘から離脱した。');
-        renderAll();
-      } else {
-        setMessage('逃げられない！');
-        enemyTurn();
-        renderParty();
-      }
-    }
-
-    function renderAll(){
-      drawMap();
-      renderParty();
-      renderBattle();
-      renderMenus();
-      document.getElementById('message').textContent = state.message;
-    }
-
-    window.advanceTurn = () => runCommand(0);
-    window.escapeBattle = escapeBattle;
-
-    document.addEventListener('keydown', (e) => {
-      const k = e.key.toLowerCase();
-      if (k === 'arrowup' || k === 'w') move(0,-1);
-      else if (k === 'arrowdown' || k === 's') move(0,1);
-      else if (k === 'arrowleft' || k === 'a') move(-1,0);
-      else if (k === 'arrowright' || k === 'd') move(1,0);
-      else if (k === 'enter' || k === ' ') interact();
-      else if (k === '1') runCommand(0);
-      else if (k === '2') runCommand(1);
-      else if (k === '3') runCommand(2);
-      else if (k === '4') runCommand(3);
+    addEventListener('keydown', e=>{
+      const key=e.key.toLowerCase();
+      const dir={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'}[key];
+      if(dir){ e.preventDefault(); move(dir); }
+      if(key===' ' || key==='enter'){ e.preventDefault(); action(); }
     });
+    document.querySelectorAll('[data-dir]').forEach(btn=>btn.addEventListener('click',()=>move(btn.dataset.dir)));
+    document.getElementById('action').addEventListener('click', action);
+    document.getElementById('restart').addEventListener('click', restart);
 
-    document.querySelectorAll('[data-move]').forEach(btn => {
-      const dir = btn.dataset.move;
-      const map = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
-      const fn = () => move(...map[dir]);
-      btn.onclick = fn;
-      btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); fn(); }, {passive:false});
-    });
-    document.getElementById('actBtn').onclick = interact;
-
-    generateDungeon();
-    renderAll();
-    log('遺跡探索を開始。');
+    function drawAssetPreview(){
+      const assets=[['勇者',sprites.hero],['村人',sprites.npc],['スライム',sprites.slime],['宝箱',sprites.chest],['星',sprites.star],['木',sprites.tree]];
+      const strip=document.getElementById('assetStrip');
+      for(const [name,pattern] of assets){
+        const box=document.createElement('div'); box.className='asset';
+        const c=document.createElement('canvas'); c.width=48; c.height=48;
+        const temp=c.getContext('2d'); temp.imageSmoothingEnabled=false;
+        box.appendChild(c); box.append(name); strip.appendChild(box);
+        pattern.forEach((row, ry) => [...row].forEach((key, rx) => { if(pal[key]){ temp.fillStyle=pal[key]; temp.fillRect(rx*5+2, ry*4+2, 5, 5); } }));
+      }
+    }
+    drawAssetPreview(); updateUi(); draw();
   </script>
 </body>
 </html>
